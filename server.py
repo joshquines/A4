@@ -11,13 +11,10 @@ import time
 import traceback
 import select
 import string
+import cryptography
 
 #GLOBAL VARIABLES
-OUTGOING = "---->"
-INCOMING = "<----"
-SRC_PORT = 0
-HOST = ''
-DST_PORT = 0
+BUFFER_SIZE = 4096
 
 def read(filename):
 
@@ -25,12 +22,33 @@ def write(filename):
 
 def cipher(cipherType, key):
 
-
+def logging(msg):
+    # get local time
+    print(time.strftime("%a %b %d %H:%M:%S") + ": " + msg)
 		
-def clientHandler(client, dstSocket):
+
+# Authentication
+	# server → client: random challenge
+	# client → server: compute and send back a reply that can only be computed if secret key is known
+	# server → client: verify the reply, send success/failure message to client
+
+# Request
+	# client → server: operation, filename
+	# server → client: response indicating whether operation can proceed
+
+# Data Exchange
+	# client → server: data chunk
+	# server → client: data chunk
+	# In case of any errors, the server should indicate so to the client and then disconnect.
+		# server → client: optional error message
+
+
+def clientHandler(client, cipher, nonce, key):
 	
 	""" THIS WILL HAVE THE CRYPTO STUFF, INPUTS WILL BE DIFFERENT *********************************************************"""
-	inputs = [client, dstSocket] #maybe this takes in the args?
+
+
+
 
 	# CHECK IF CLIENT KEY = SERVER KEY. IT'S LIKE A PASSWORD THING GOING ON
 	#if clientKey == KEY:
@@ -95,24 +113,34 @@ if __name__ == "__main__":
 		KEY = sys.argv[2]
 	else:
 		print("\nIncorrect number of parameters: ")
-		print("Usage: server.py port key")
+		print("Usage: server.py <port> <key>")
+		sys.exit()
+
+	print("Listening on port " + str(PORT))
+	print("Using secret key: " + str(KEY))
 
 
+	serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	HOST = socket.gethostname
+	serverSocket.bind((HOST, PORT))
+	serverSocket.listen(5)
 
 
 	""" THIS CAN PROBABLY STAY THE SAME *********************************************************"""
 	while 1:
-		client, addr = sourceSocket.accept()
-		# get local time
-		timeNow = time.strftime("%a %b %d %H:%M:%S")
-		print("New Connection: " + timeNow + ", from " + str(addr[0]))
+		client, addr = serverSocket.accept()
+		# First message
+		# client → server: cipher, nonce
+		cipherNonceMsg = client.recv(BUFFER_SIZE).decode("utf-8").split(";")
+		cipher = cipherNonceMsg[0]
+		nonce = cipherNonceMsg[1]
 
-		# Create  socket that will forward data
-		dstSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		dstSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		logging("new connection from " + str(addr[0]) + " cipher = " + cipher)
+		logging("nonce = " + nonce)
+		clientHandler(client,cipher, nonce, KEY)
+		# Final Success
+		# server → client: final success
+		logging("status: SUCCESS")
 
-		# Connect to destination server
-		dstSocket.connect((SERVER, DST_PORT))
+		client.close()
 
-		# Start a thread that will handle data between the sockets
-		threading.Thread(target=clientHandler, args=(client, dstSocket)).start()
