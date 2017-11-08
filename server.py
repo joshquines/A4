@@ -32,10 +32,18 @@ def clientHandler(client, dstSocket):
 	""" THIS WILL HAVE THE CRYPTO STUFF, INPUTS WILL BE DIFFERENT *********************************************************"""
 	inputs = [client, dstSocket] #maybe this takes in the args?
 
+	# CHECK IF CLIENT KEY = SERVER KEY. IT'S LIKE A PASSWORD THING GOING ON
+	#if clientKey == KEY:
+	#	do stuff 
+	#else:
+	#	close client
+
 	# GET ARGS FROM CLIENT
 	# COMMAND -> DETERMINES IF CALLS READ R WRITE
 	# CIPHER -> CALLS FUNCTION CIPHER AND PASSES THE TYPE OF CIPHER
 	# KEY -> DO CRYPTO SHIT, PROBABLY GETS PASSED INTO THE CIPHER FUNCTION TOO  
+
+	# OR CIPHER GETS CALLED INSIDE READ/WRITE
 
 	if COMMAND == read:
 		read(filename)
