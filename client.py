@@ -13,6 +13,19 @@ import traceback
 import select
 import string
 
+
+def read(FILENAME):
+
+def write(FILENAME):
+
+
+# CONNECT TO SERVER HERE
+
+	# SEND KEY, FILENAME, CIPHER TO SERVER
+
+
+ 	# GET SERVER RESPONSE HERE 
+
 if __name__ == "__main__":
 
 	# CHECK ARGS
@@ -23,7 +36,11 @@ if __name__ == "__main__":
 		KEY = sys.argv[5]
 		try:
 			HOSTNAME = sys.argv[3].split(":")[0]
-			PORT = sys.argv[3].split(":")[1] 
+			prePortCheck = sys.argv[3].split(":")[1] 
+			if int(prePortCheck) >= 0 or int(prePortCheck) =< 65535:
+				PORT = prePortCheck
+			else:
+				print("Invalid port number. Must be in range 0 - 65535")
 			print("DEBUG \nHOSTNAME: " + HOSTNAME + "\nPORT: " + PORT)
 		except:
 			print("Incorrect hosname:port syntax")

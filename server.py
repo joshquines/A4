@@ -18,11 +18,33 @@ INCOMING = "<----"
 SRC_PORT = 0
 HOST = ''
 DST_PORT = 0
+
+def read(filename):
+
+def write(filename):
+
+def cipher(cipherType, key):
+
+
 		
 def clientHandler(client, dstSocket):
 	
 	""" THIS WILL HAVE THE CRYPTO STUFF, INPUTS WILL BE DIFFERENT *********************************************************"""
-	inputs = [client, dstSocket]
+	inputs = [client, dstSocket] #maybe this takes in the args?
+
+	# GET ARGS FROM CLIENT
+	# COMMAND -> DETERMINES IF CALLS READ R WRITE
+	# CIPHER -> CALLS FUNCTION CIPHER AND PASSES THE TYPE OF CIPHER
+	# KEY -> DO CRYPTO SHIT, PROBABLY GETS PASSED INTO THE CIPHER FUNCTION TOO  
+
+	if COMMAND == read:
+		read(filename)
+	elif COMMAND == write:
+		write(filename)
+
+
+
+
 
 	""" THIS WHILE LOOP MAY NOT BE NEEDED *********************************************************"""
 	while 1:
