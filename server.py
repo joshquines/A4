@@ -6,7 +6,7 @@ Josh Quines 10138118 T03
 import socket
 import socketserver
 import sys
-import threading
+import os
 import time
 import traceback
 import select
@@ -22,6 +22,7 @@ def write(filename):
 
 def cipher(cipherType, key):
 
+"""Log client activity to standard output"""
 def logging(msg):
     # get local time
     print(time.strftime("%a %b %d %H:%M:%S") + ": " + msg)
@@ -107,7 +108,7 @@ def clientHandler(client, cipher, nonce, key):
 
 if __name__ == "__main__":
 
-	""" Making a new Arg Check"""
+	# Arg check
 	if len(sys.argv) == 3:
 		PORT = sys.argv[1]
 		KEY = sys.argv[2]
@@ -119,14 +120,11 @@ if __name__ == "__main__":
 	print("Listening on port " + str(PORT))
 	print("Using secret key: " + str(KEY))
 
-
 	serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	HOST = socket.gethostname
 	serverSocket.bind((HOST, PORT))
 	serverSocket.listen(5)
 
-
-	""" THIS CAN PROBABLY STAY THE SAME *********************************************************"""
 	while 1:
 		client, addr = serverSocket.accept()
 		# First message
