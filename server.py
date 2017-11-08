@@ -11,10 +11,21 @@ import time
 import traceback
 import select
 import string
-import cryptography
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
+import random
 
 #GLOBAL VARIABLES
 BUFFER_SIZE = 4096
+
+def authentication(client, key):
+    # https://codereview.stackexchange.com/questions/47529/creating-a-string-of-random-characters
+    message = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
+
+def sendEncrypted(client, msg):
+    	
+def recvEncrypted(client, msg):
 
 def read(filename):
 
@@ -48,14 +59,13 @@ def clientHandler(client, cipher, nonce, key):
 	
 	""" THIS WILL HAVE THE CRYPTO STUFF, INPUTS WILL BE DIFFERENT *********************************************************"""
 
+	if(!authentication(client, key)):
+    	logging("Error: wrong key")
+		client.close()
+		return
 
 
 
-	# CHECK IF CLIENT KEY = SERVER KEY. IT'S LIKE A PASSWORD THING GOING ON
-	#if clientKey == KEY:
-	#	do stuff 
-	#else:
-	#	close client
 
 	# GET ARGS FROM CLIENT
 	# COMMAND -> DETERMINES IF CALLS READ R WRITE
