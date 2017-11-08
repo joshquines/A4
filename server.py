@@ -27,9 +27,9 @@ def sendEncrypted(client, msg):
     	
 def recvEncrypted(client, msg):
 
-def read(filename):
+def read(client, filename):
 
-def write(filename):
+def write(client, filename):
 
 def cipher(cipherType, key):
 
@@ -57,12 +57,15 @@ def logging(msg):
 
 def clientHandler(client, cipher, nonce, key):
 	
-	""" THIS WILL HAVE THE CRYPTO STUFF, INPUTS WILL BE DIFFERENT *********************************************************"""
-
+	# Authentication 
 	if(!authentication(client, key)):
     	logging("Error: wrong key")
 		client.close()
-		return
+		return True
+	else: 
+		return False
+
+	# Request
 
 
 
