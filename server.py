@@ -59,8 +59,16 @@ def clientHandler(client, dstSocket):
 
 if __name__ == "__main__":
 
+	""" Making a new Arg Check"""
+	if len(sys.argv) == 3:
+		PORT = sys.argv[1]
+		KEY = sys.argv[2]
+	else:
+		print("\nIncorrect number of parameters: ")
+		print("Usage: server.py port key")
+
 	""" THE ARGUMENT CHECKS WILL BE DIFFERENT HERE *********************************************************"""
-	# Parse arguments
+	"""# Parse arguments
 	if len(sys.argv) < 4 or len(sys.argv) == 6 or len(sys.argv) > 8 : 	# Minimum number of arguments is 3, maximum is 7
 																		#Impossible to have ./A2.py + 5 arguments
 		print("\nIncorrect number of parameters: ")
@@ -112,6 +120,7 @@ if __name__ == "__main__":
 
 	print("Port logger running: srcPort=" + str(SRC_PORT) + " host=" + SERVER + " dstPort=" + str(DST_PORT))
 	#print("Log command = " + LOG_COMMAND)
+	"""
 
 	# Create socket to accept clients
 	sourceSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -129,7 +138,7 @@ if __name__ == "__main__":
 		# Create  socket that will forward data
 		dstSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		dstSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		
+
 		# Connect to destination server
 		dstSocket.connect((SERVER, DST_PORT))
 
