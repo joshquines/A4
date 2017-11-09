@@ -81,6 +81,8 @@ def setCipher(cCipher, key, nonce):
 		BLOCK_SIZE = 128
 		IV = hashlib.sha128(IVMsg).hexdigest()
 		SK = hashlib.sha128(SKMsg).hexdigest()
+		logging("IV = " + IV)
+		logging("SK = " + SK)
 		CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
 
 	elif cipher == 'aes256':
@@ -88,7 +90,11 @@ def setCipher(cCipher, key, nonce):
 		BLOCK_SIZE = 256
 		IV = hashlib.sha256(IVMsg).hexdigest()
 		SK = hashlib.sha256(SKMsg).hexdigest()
+		logging("IV = " + IV)
+		logging("SK = " + SK)
 		CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
+	else:
+    	logging("Null cipher being used, IV and SK not needed")
 
 
 """Log client activity to standard output"""
@@ -118,7 +124,7 @@ def clientHandler(client, cipher, nonce, key):
 	else:
     	sendEncrypted(client, "Server: Correct Key! Send me your request")
 
-	request = recvEncrypted(client)
+	request = recvEncrypted(client).decode("utf-8").split(";")
 
 	operation = request[0]
 	filename = request[1]
