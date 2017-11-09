@@ -30,9 +30,17 @@ FILENAME = None
 cipherType = ['aes256','aes128','null']
 
 
-def read(FILENAME):
+def read(serverSocket):
+	f = open(FILENAME, 'r')
+	fileData = f.read()
+	sendEncrypted(serverSocket, fileData)
+	f.close()
 
-def write(FILENAME):
+def write(serverSocket):
+	fileData = recvEncrypted(serverSocket)
+	f = open(FILENAME, 'w')
+	f.write(fileData)
+	f.close()
 
 # FOR CHALLENGE
 def authentication(msg):
@@ -105,25 +113,23 @@ def serverCOnnect(command, filename, hostname, port, cipher, key):
 	toSend = authentication(serverChallenge)
 	# Send challenge response to serverSocket
 	sendEncrypted(serverSocket, toSend)
-	
-	
-
-
-
-	# AUTHENTICATION RESULT
-	if serverResponse == False:
-		print("Invalid key. Termination connection")
+	# Get challenge result from server 
+	keyResult = recvEncrypted(serverSocket)
+	# Key check
+	if keyResult == "Incorrect Key Used":
+		print("Wrong key used.\nTerminating connection")
+		serverSocket.close()
 		sys.close()
 	else:
-		print("Key is valid")
+		print("Key used was valid")
 
 	# REQUEST ------------------------------------------------------------------------
 	# Start sending stuff
 	requestAction = COMMAND + ";" + FILENAME
-	serverSocket.send(requestAction).encode()
+	sendEncrypted(serverSocket, requestAction)
 
 	# Get server response True/False (Server: I can do this action/I cannot do this action)
-	serverResponse = serverSocket.recv(BUFFER_SIZE)
+	serverResponse = recvEncrypted(serverSocket)
 
 	# DATA EXCHANGE ------------------------------------------------------------------
 	if serverResponse == True:
