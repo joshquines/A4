@@ -23,9 +23,41 @@ def authentication(client, key):
     # https://codereview.stackexchange.com/questions/47529/creating-a-string-of-random-characters
     message = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
 
-def sendEncrypted(client, msg):
+#def sendEncrypted(client, msg):
     	
-def recvEncrypted(client, msg):
+#def recvEncrypted(client, msg):
+
+# Use this to send msg to server
+def encrypter(cipher, msg):
+	if cipher == 'aes128':
+		# Encrypt using aes128
+		toSend = resultOfEncryption
+		pass
+	elif cipher == 'aes256':
+		# Encrypt using aes256
+		toSend = resultOfEncryption
+		pass
+	elif cipher == 'null':
+		# Just send msg
+		toSend = msg
+		pass
+	return toSend
+
+# Use this to receive msg from server
+def decrypter(cipher,msg):
+	if cipher == 'aes128':
+		# Decrypt using aes128
+		toReceive = resultOfEncryption
+		pass
+	elif cipher == 'aes256':
+		# Decrypt using aes256
+		toReceive = resultOfEncryption
+		pass
+	elif cipher == 'null':
+		# Dest send msg
+		toReceive = msg
+		pass
+	return toReceive
 
 def read(client, filename):
 
@@ -56,23 +88,54 @@ def logging(msg):
 
 
 def clientHandler(client, cipher, nonce, key):
-					#^^^^ does this turn to self?
 
+	# Acknowledge cipher + nonce to client but encrypted
+	ackClient = "Cipher used: " + str(cipher) + "\nNonce: " + str(nonce)
+	ackClientEncrypted = encrypter(cipher, ackClient)
+ 	client.sendall(ackClientEncrypted)
 
-
-	# GET CIPHER TYPE + NONCE
-	
-	cipherType = cipher
 
 	# Authentication 
+	# The key received from the client is encrypted using cipher<x>
+	clientKeyEncrypte = client.recv(BUFFER_SIZE).decode("utf-8")
+	clientKey = decrypter(cipher, clientKeyEncrypted)
+
+	"""
 	if(!authentication(client, key)):
     	logging("Error: wrong key")
 		client.close()
 		return True
 	else: 
 		return False
+	"""
 
-	# Request
+	authCheck = authentication(client, key)
+	if authCheck == False:
+		logging("Error: wrong key")
+		keyFail = encrypter(cipher, authCheck)
+		client.sendall(keyFail)
+		client.close()
+	else:
+		keyValid = encrypter(cipher, authCheck)
+		client.sendall(keyValid)
+
+	# Get method + filename
+	clientFileRequestEncrypted = client.recv(BUFFER_SIZE).decode("utf-8")
+	clientFileRequest = decrypter(cipher, clientFileRequestEncrypted)
+	command = clientFileRequest.split(';')[0]
+	filename = clientFileRequest.split(';')[1]
+
+	# Check if server can do action
+	# Temporarily calling this function doAction, still gotta define it and find out how to do it
+	# doAction will return either True or False
+
+	canDo = doAction()
+	canDoEncrypt = encrypter(cipher, canDo)
+	client.sendall(canDoEncrypt)
+
+	# If canDo was true, should be able to either download from client, or give file to client
+
+
 
 
 
@@ -155,7 +218,7 @@ if __name__ == "__main__":
 
 		logging("new connection from " + str(addr[0]) + " cipher = " + cipher)
 		logging("nonce = " + nonce)
-		clientHandler(client,cipher, nonce, KEY)
+		clientHandler(client,cipher, nonce, KEY) 
 		# Final Success
 		# server → client: final success
 		logging("status: SUCCESS")

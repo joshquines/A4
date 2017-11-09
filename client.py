@@ -30,7 +30,12 @@ def read(FILENAME):
 
 def write(FILENAME):
 
-def sendMessage(cipher, msg):
+"""
+sendMessage and recvMessage can also be used in the server
+"""
+
+# Use this to send msg to server
+def encrypter(cipher, msg):
 	if cipher == 'aes128':
 		# Encrypt using aes128
 		toSend = resultOfEncryption
@@ -45,7 +50,8 @@ def sendMessage(cipher, msg):
 		pass
 	return toSend
 
-def recvMessage(cipher,msg):
+# Use this to receive msg from server
+def decrypter(cipher,msg):
 	if cipher == 'aes128':
 		# Decrypt using aes128
 		toReceive = resultOfEncryption
@@ -73,19 +79,20 @@ def serverCOnnect(command, filename, hostname, port, cipher, key):
 	# FIRST MESSAGE -----------------------------------------------------------------
 	# Send to server for authentication. Only send CIPHER and NONCE
 	initMessage = CIPHER + ';' + NONCE
-	serverSocket.sendall(initMessage)
+	serverSocket.sendall(initMessage).encode("utf-8")
 
 	# Get server response
-	initMessage = serverSocket.recv()
+	initMessage = serverSocket.recv(BUFFER_SIZE) # eg. Cipher method is: x ****This is encrypted
+	initMessageDecrypted = decrypter(cipher, initMessage)
 
 	# AUTHENTICATION -----------------------------------------------------------------
 	# Send key (encrypted)
-	toServer = sendMessage(CIPHER, KEY)
-	serverSocket.sendall(toServer)
+	toServer = encrypter(CIPHER, KEY)
+	serverSocket.sendall(toServer).encode("utf-8")
 
 	# Receive response
-	fromServer = serverSocket.recv()
-	serverResponse = recvMessage(CIPHER, fromServer)
+	fromServer = serverSocket.recv(BUFFER_SIZE)
+	serverResponse = decrypter(CIPHER, fromServer)
 
 	# AUTHENTICATION RESULT
 	if serverResponse == False:
@@ -97,10 +104,10 @@ def serverCOnnect(command, filename, hostname, port, cipher, key):
 	# REQUEST ------------------------------------------------------------------------
 	# Start sending stuff
 	requestAction = COMMAND + ";" + FILENAME
-	serverSocket.send(requestAction)
+	serverSocket.send(requestAction).encode("utf-8")
 
-	# Get server response (Server: I can do this action/I cannot do this action)
-	serverResponse = serverSocket.recv()
+	# Get server response True/False (Server: I can do this action/I cannot do this action)
+	serverResponse = serverSocket.recv(BUFFER_SIZE)
 
 	# DATA EXCHANGE ------------------------------------------------------------------
 	if serverResponse == True:
@@ -108,6 +115,7 @@ def serverCOnnect(command, filename, hostname, port, cipher, key):
 		pass
 	else:
 		print("Server unable to do operation")
+		sys.close()
 
 	# FINAL RESULT -------------------------------------------------------------------
 
