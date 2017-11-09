@@ -138,26 +138,8 @@ def clientHandler(client, cipher, nonce, key):
 
 
 
-
-
-
-	# GET ARGS FROM CLIENT
-	# COMMAND -> DETERMINES IF CALLS READ R WRITE
-	# CIPHER -> CALLS FUNCTION CIPHER AND PASSES THE TYPE OF CIPHER
-	# KEY -> DO CRYPTO SHIT, PROBABLY GETS PASSED INTO THE CIPHER FUNCTION TOO  
-
-	# OR CIPHER GETS CALLED INSIDE READ/WRITE
-
-	if COMMAND == read:
-		read(filename)
-	elif COMMAND == write:
-		write(filename)
-
-
-
-
-
 	""" ACTUALLY NO WE DON'T NEED THIS. 80% SURE LOL *********************************************************"""
+	"""
 	while 1:
 		readable, writeable, exceptional = select.select(inputs, [], [])
 		for sock in readable:
@@ -188,6 +170,7 @@ def clientHandler(client, cipher, nonce, key):
 					logging(logData, OUTGOING)
 
 				dstSocket.sendall(data)
+	"""
 
 
 if __name__ == "__main__":
