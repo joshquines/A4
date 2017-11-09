@@ -22,26 +22,50 @@ BUFFER_SIZE = 4096
 CIPHER = 0
 BLOCK_SIZE = 0
 
+
+# Authentication
+	# server → client: random challenge
+	# client → server: compute and send back a reply that can only be computed if secret key is known
+	# server → client: verify the reply, send success/failure message to client
+# The key received from the client is encrypted using cipher<x>
 def authentication(client, key, nonce):
     # https://codereview.stackexchange.com/questions/47529/creating-a-string-of-random-characters
     message = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
 	sendEncrypted(client, message)
+	hashMsg = bytearray(msg + key)
+	answer = hashlib.sha1(hashMsg).hexdigest()
+	clientAnswer = recvEncrypted(client)
 
+	if answer != clientAnswer : 
+		return False
+	else:
+    	return True
 
 
 def sendEncrypted(client, msg):
+    # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
     padder = padding.PKCS7(BLOCK_SIZE).padder()
 	padded_data = padder.update(msg) + padder.finalize()
 	if CIPHER == 0:
-    	serverSocket.sendall(msg).encode()
+    	client.sendall(msg).encode()
 	else:
-		encrypt = CIPHER.encryptor()
+    	# https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
+		encryptor = CIPHER.encryptor()
 		toSend = encrypt.update(padded_data) + encrypt.finalize()
-		serverSocket.sendall(toSend).encode()
+		client.sendall(toSend).encode()
 
 
-def recvEncrypted(client, msg):
-
+def recvEncrypted(client):
+	if CIPHER = 0:
+    	clientAns = client.recv(BUFFER_SIZE).decode("utf-8")
+	else:
+    	clientAns = client.recv(BUFFER_SIZE)
+		decryptor = CIPHER.decryptor()
+		dataRecvd = decryptor.update(clientAns) + decryptor.finalize()
+		unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
+		data = unpadder.update(dataRecvd) + decryptor.finalize()
+	
+	return data
 
 def read(client, filename):
 
@@ -73,11 +97,6 @@ def logging(msg):
     print(time.strftime("%a %b %d %H:%M:%S") + ": " + msg)
 		
 
-# Authentication
-	# server → client: random challenge
-	# client → server: compute and send back a reply that can only be computed if secret key is known
-	# server → client: verify the reply, send success/failure message to client
-
 # Request
 	# client → server: operation, filename
 	# server → client: response indicating whether operation can proceed
@@ -90,38 +109,17 @@ def logging(msg):
 
 
 def clientHandler(client, cipher, nonce, key):
-	""" What is this for
-	# Acknowledge cipher + nonce to client but encrypted
-	ackClient = "Cipher used: " + str(cipher) + "\nNonce: " + str(nonce)
-	ackClientEncrypted = encrypter(cipher, ackClient)
- 	client.sendall(ackClientEncrypted)
-
-
-	# Authentication 
-	# The key received from the client is encrypted using cipher<x>
-	clientKeyEncrypted = client.recv(BUFFER_SIZE).decode("utf-8")
-	clientKey = decrypter(cipher, clientKeyEncrypted)
-
-	
-	if(!authentication(client, key)):
-    	logging("Error: wrong key")
-		client.close()
-		return True
-	else: 
-		return False
-	"""
-
 	
 	if not authentication(client, key):
 		logging("Error: wrong key")
-		keyInvalid = 
-		client.sendall(bytearray(, "utf -8"))
+		sendEncrypted(client, "Incorrect Key Used")
 		client.close()
 		return
-	else:
-		keyValid = encrypter(cipher, authCheck)
-		client.sendall(keyValid)
 
+
+	
+
+	"""
 	# Get method + filename
 	clientFileRequestEncrypted = client.recv(BUFFER_SIZE).decode("utf-8")
 	clientFileRequest = decrypter(cipher, clientFileRequestEncrypted)
@@ -138,7 +136,7 @@ def clientHandler(client, cipher, nonce, key):
 
 	# If canDo was true, should be able to either download from client, or give file to client
 	# If canDo was not true, client closes connection
-
+	"""
 
 
 if __name__ == "__main__":
@@ -171,6 +169,9 @@ if __name__ == "__main__":
 		logging("new connection from " + str(addr[0]) + " cipher = " + cCipher)
 		logging("nonce = " + nonce)
 		setCipher(cCipher, key, nonce)
+
+		sendEncrypted(client, "Cipher and nonce received.")
+
 		clientHandler(client, key, nonce) 
 		# Final Success
 		# server → client: final success
