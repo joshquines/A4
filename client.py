@@ -69,7 +69,7 @@ def serverCOnnect(command, filename, hostname, port, cipher, key):
 
 	# FIRST MESSAGE -----------------------------------------------------------------
 	# Send to server for authentication. Only send CIPHER and NONCE
-	initMessage = CIPHER + ',' + NONCE
+	initMessage = CIPHER + ';' + NONCE
 	serverSocket.sendall(initMessage)
 
 	# Get server response
@@ -93,7 +93,7 @@ def serverCOnnect(command, filename, hostname, port, cipher, key):
 
 	# REQUEST ------------------------------------------------------------------------
 	# Start sending stuff
-	requestAction = COMMAND + "," + FILENAME
+	requestAction = COMMAND + ";" + FILENAME
 	serverSocket.send(requestAction)
 
 	# Get server response (Server: I can do this action/I cannot do this action)

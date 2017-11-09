@@ -56,9 +56,12 @@ def logging(msg):
 
 
 def clientHandler(client, cipher, nonce, key):
-	
+					#^^^^ does this turn to self?
 
-	# GET CIPHER TYPE
+
+
+	# GET CIPHER TYPE + NONCE
+	
 	cipherType = cipher
 
 	# Authentication 
@@ -90,7 +93,7 @@ def clientHandler(client, cipher, nonce, key):
 
 
 
-	""" NVM WE NEED THIS WHILE LOOP TO SEND/RECEIVE *********************************************************"""
+	""" ACTUALLY NO WE DON'T NEED THIS. 80% SURE LOL *********************************************************"""
 	while 1:
 		readable, writeable, exceptional = select.select(inputs, [], [])
 		for sock in readable:
