@@ -112,12 +112,28 @@ def clientHandler(client, cipher, nonce, key):
 	
 	if not authentication(client, key):
 		logging("Error: wrong key")
-		sendEncrypted(client, "Incorrect Key Used")
+		sendEncrypted(client, "Server: Incorrect Key Used")
 		client.close()
 		return
+	else:
+    	sendEncrypted(client, "Server: Correct Key! Send me your request")
 
+	request = recvEncrypted(client)
 
-	
+	operation = request[0]
+	filename = request[1]
+
+	logging("Command: " + operation + " Filename: " + filename)
+
+	if operation == "read":
+    	sendEncrypted(client, "Server: Valid Operation")
+    	read(client, filename)
+	elif operation == "write":
+    	sendEncrypted(client, "Server: Valid Operation")
+    	write(client, filename)
+	else:
+    	sendEncrypted(client, "Server: Invalid Operation. I can only read and write.")
+    	
 
 	"""
 	# Get method + filename
@@ -170,7 +186,7 @@ if __name__ == "__main__":
 		logging("nonce = " + nonce)
 		setCipher(cCipher, key, nonce)
 
-		sendEncrypted(client, "Cipher and nonce received.")
+		sendEncrypted(client, "Server: Cipher and nonce received.")
 
 		clientHandler(client, key, nonce) 
 		# Final Success
