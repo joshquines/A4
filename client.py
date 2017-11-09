@@ -134,12 +134,17 @@ def serverCOnnect(command, filename, hostname, port, cipher, key):
 	# DATA EXCHANGE ------------------------------------------------------------------
 	if serverResponse == True:
 		# Start doing stuff with filename aka upload the file to the server
-		pass
+		if COMMAND == 'read'
+			read(serverSocket):
+		elif COMMAND == 'write':
+			write(serverSocket
 	else:
 		print("Server unable to do operation")
 		sys.close()
 
 	# FINAL RESULT -------------------------------------------------------------------
+	print("SUCCESS MOTHAFUCKAAAAAAAAAA WOOOOOOOO")
+				  
 
 
 
