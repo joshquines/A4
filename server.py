@@ -18,6 +18,8 @@ import random
 
 #GLOBAL VARIABLES
 BUFFER_SIZE = 4096
+CIPHER = 0
+BLOCK_SIZE = 0
 
 def authentication(client, key, nonce):
     # https://codereview.stackexchange.com/questions/47529/creating-a-string-of-random-characters
@@ -29,18 +31,7 @@ def authentication(client, key, nonce):
 
 # Use this to send msg to server
 def encrypter(cipher, msg, nonce):
-	if cipher == 'aes128':
-		# Encrypt using aes128
-		toSend = resultOfEncryption
-		pass
-	elif cipher == 'aes256':
-		# Encrypt using aes256
-		toSend = resultOfEncryption
-		pass
-	elif cipher == 'null':
-		# Just send msg
-		toSend = msg
-		pass
+
 	return toSend
 
 # Use this to receive msg from server
@@ -63,7 +54,19 @@ def read(client, filename):
 
 def write(client, filename):
 
-def cipher(cipherType, key):
+def setCipher(cipherType, key):
+	if cipher == 'aes128':
+		# Encrypt using aes128
+		BLOCK_SIZE = 128
+		
+	elif cipher == 'aes256':
+		# Encrypt using aes256
+		toSend = resultOfEncryption
+		pass
+	elif cipher == 'null':
+		# Just send msg
+		toSend = msg
+		pass
 
 """Log client activity to standard output"""
 def logging(msg):
@@ -88,7 +91,7 @@ def logging(msg):
 
 
 def clientHandler(client, cipher, nonce, key):
-
+	""" What is this for
 	# Acknowledge cipher + nonce to client but encrypted
 	ackClient = "Cipher used: " + str(cipher) + "\nNonce: " + str(nonce)
 	ackClientEncrypted = encrypter(cipher, ackClient)
@@ -97,10 +100,10 @@ def clientHandler(client, cipher, nonce, key):
 
 	# Authentication 
 	# The key received from the client is encrypted using cipher<x>
-	clientKeyEncrypte = client.recv(BUFFER_SIZE).decode("utf-8")
+	clientKeyEncrypted = client.recv(BUFFER_SIZE).decode("utf-8")
 	clientKey = decrypter(cipher, clientKeyEncrypted)
 
-	"""
+	
 	if(!authentication(client, key)):
     	logging("Error: wrong key")
 		client.close()
@@ -109,12 +112,13 @@ def clientHandler(client, cipher, nonce, key):
 		return False
 	"""
 
-	authCheck = authentication(client, key)
-	if authCheck == False:
+	
+	if not authentication(client, key):
 		logging("Error: wrong key")
-		keyFail = encrypter(cipher, authCheck)
-		client.sendall(keyFail)
+		keyInvalid = 
+		client.sendall(bytearray(, "utf -8"))
 		client.close()
+		return
 	else:
 		keyValid = encrypter(cipher, authCheck)
 		client.sendall(keyValid)
@@ -136,41 +140,6 @@ def clientHandler(client, cipher, nonce, key):
 	# If canDo was true, should be able to either download from client, or give file to client
 	# If canDo was not true, client closes connection
 
-
-
-	""" ACTUALLY NO WE DON'T NEED THIS. 80% SURE LOL *********************************************************"""
-	"""
-	while 1:
-		readable, writeable, exceptional = select.select(inputs, [], [])
-		for sock in readable:
-			data = sock.recv(1024)
-			logData = data
-			# If no data, close the current connection socket.
-			if not data:
-				print("No data provided. Connection closed.")
-				client.close()
-				dstSocket.close()
-				return
-
-			# If socket sending data is the destination socket send the data to the client
-			if sock == dstSocket:
-				if REPLACE_FLAG == True:
-					logData = replacer(data)
-
-				if LOG_FLAG == True:
-					logging(logData, INCOMING)
-
-				client.sendall(data)
-			# Otherwise send the data from client to the destination
-			else:
-				if REPLACE_FLAG == True:
-					logData = replacer(data)
-
-				if LOG_FLAG == True:
-					logging(logData, OUTGOING)
-
-				dstSocket.sendall(data)
-	"""
 
 
 if __name__ == "__main__":
@@ -197,12 +166,12 @@ if __name__ == "__main__":
 		# First message
 		# client → server: cipher, nonce
 		cipherNonceMsg = client.recv(BUFFER_SIZE).decode("utf-8").split(";")
-		cipher = cipherNonceMsg[0]
+		CIPHER = cipherNonceMsg[0]
 		nonce = cipherNonceMsg[1]
 
-		logging("new connection from " + str(addr[0]) + " cipher = " + cipher)
+		logging("new connection from " + str(addr[0]) + " cipher = " + CIPHER)
 		logging("nonce = " + nonce)
-		clientHandler(client,cipher, nonce, KEY) 
+		clientHandler(client, nonce, KEY) 
 		# Final Success
 		# server → client: final success
 		logging("status: SUCCESS")

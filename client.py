@@ -120,7 +120,7 @@ def serverCOnnect(command, filename, hostname, port, cipher, key):
 	# FIRST MESSAGE -----------------------------------------------------------------
 	# Send to server for authentication. Only send CIPHER and NONCE
 	initMessage = CIPHER + ';' + NONCE
-	serverSocket.sendall(initMessage).encode("utf-8")
+	serverSocket.sendall(initMessage).encode()
 
 	# Get server response
 	initMessage = serverSocket.recv(BUFFER_SIZE) # eg. Cipher method is: x ****This is encrypted
@@ -129,7 +129,7 @@ def serverCOnnect(command, filename, hostname, port, cipher, key):
 	# AUTHENTICATION -----------------------------------------------------------------
 	# Send key (encrypted)
 	toServer = encrypter(CIPHER, KEY)
-	serverSocket.sendall(toServer).encode("utf-8")
+	serverSocket.sendall(toServer).encode()
 
 	# Receive response
 	fromServer = serverSocket.recv(BUFFER_SIZE)
@@ -145,7 +145,7 @@ def serverCOnnect(command, filename, hostname, port, cipher, key):
 	# REQUEST ------------------------------------------------------------------------
 	# Start sending stuff
 	requestAction = COMMAND + ";" + FILENAME
-	serverSocket.send(requestAction).encode("utf-8")
+	serverSocket.send(requestAction).encode()
 
 	# Get server response True/False (Server: I can do this action/I cannot do this action)
 	serverResponse = serverSocket.recv(BUFFER_SIZE)
