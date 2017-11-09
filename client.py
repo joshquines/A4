@@ -46,8 +46,8 @@ def sendMessage(serverSocket, msg):
 		
 
 def setCipher(cCipher, key, nonce):
-	IVMsg = b(key + nonce + "IV")
-	SKMsg = b(key + nonce + "SK")
+	IVMsg = bytearray(key + nonce + "IV")
+	SKMsg = bytearray(key + nonce + "SK")
 	backend = default_backend()
 
 	if cipher == 'aes128':
