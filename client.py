@@ -15,6 +15,9 @@ import time
 import traceback
 import select
 import string
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
 
 #GLOBAL VARIABLES
 BUFFER_SIZE = 4096
@@ -30,82 +33,35 @@ def read(FILENAME):
 
 def write(FILENAME):
 
-"""
-encrypter and decrypter can also be used in the server
-"""
 
-# TAKEN FROM 
-# https://dzone.com/articles/interoperable-aes256-encryption-between-cryptojs-p
-# TODO: Implement this into our encrypter and decrypter functions
-# KEY is obvs the key
-# IV I think the nonce  
+# SEND MESSAGE TO SERVER
+def sendMessage(serverSocket, msg):
+	if CIPHER == 'null':
+		serverSocket.sendall(msg).encode('utf-8')
+	else:
+		encrypt = CIPHER.encryptor()
+		toSend = encrypt.update(msg) + encrypt.finalize()
+		serverSocket.sendall(toSend).encode('utf-8')
+		
+		
 
-"""
-import binascii
-from Crypto.Cipher import AES
-KEY = 'This is a key123'
-IV = 'This is an IV456'
-MODE = AES.MODE_CFB
-BLOCK_SIZE = 16
-SEGMENT_SIZE = 128
-def encrypt(key, iv, plaintext):
-    aes = AES.new(key, MODE, iv, segment_size=SEGMENT_SIZE)
-    plaintext = _pad_string(plaintext)
-    encrypted_text = aes.encrypt(plaintext)
-    return binascii.b2a_hex(encrypted_text).rstrip()
-def decrypt(key, iv, encrypted_text):
-    aes = AES.new(key, MODE, iv, segment_size=SEGMENT_SIZE)
-    encrypted_text_bytes = binascii.a2b_hex(encrypted_text)
-    decrypted_text = aes.decrypt(encrypted_text_bytes)
-    decrypted_text = _unpad_string(decrypted_text)
-    return decrypted_text
-def _pad_string(value):
-    length = len(value)
-    pad_size = BLOCK_SIZE - (length % BLOCK_SIZE)
-    return value.ljust(length + pad_size, '\x00')
-def _unpad_string(value):
-    while value[-1] == '\x00':
-        value = value[:-1]
-    return value
-if __name__ == '__main__':
-    input_plaintext = 'The answer is no'
-    encrypted_text = encrypt(KEY, IV, input_plaintext)
-    decrypted_text = decrypt(KEY, IV, encrypted_text)
-    assert decrypted_text == input_plaintext
-"""
+def setCipher(cCipher, key, nonce):
+	IVMsg = b(key + nonce + "IV")
+	SKMsg = b(key + nonce + "SK")
+	backend = default_backend()
 
-
-# Use this to send msg to server
-def encrypter(cipher, msg, NONCE):
 	if cipher == 'aes128':
 		# Encrypt using aes128
-		toSend = resultOfEncryption
-		pass
+		IV = hashlib.sha128(IVMsg).hexdigest()
+		SK = hashlib.sha128(SKMsg).hexdigest()
+		CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
+
 	elif cipher == 'aes256':
 		# Encrypt using aes256
-		toSend = resultOfEncryption
-		pass
-	elif cipher == 'null':
-		# Just send msg
-		toSend = msg
-		pass
-	return toSend
+		IV = hashlib.sha256(IVMsg).hexdigest()
+		SK = hashlib.sha256(SKMsg).hexdigest()
+		CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
 
-# Use this to receive msg from server
-def decrypter(cipher, msg, NONCE):
-	if cipher == 'aes128':
-		# Decrypt using aes128
-		toReceive = resultOfEncryption
-		pass
-	elif cipher == 'aes256':
-		# Decrypt using aes256
-		toReceive = resultOfEncryption
-		pass
-	elif cipher == 'null':
-		# Dest send msg
-		toReceive = msg
-		pass
-	return toReceive
 
 
 
