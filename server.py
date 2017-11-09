@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 import random
+import hashlib
 
 #GLOBAL VARIABLES
 BUFFER_SIZE = 4096
@@ -54,19 +55,23 @@ def read(client, filename):
 
 def write(client, filename):
 
-def setCipher(cipherType, key):
+def setCipher(cCipher, key, nonce):
+	IVMsg = b(key + nonce + "IV")
+	SKMsg = b(key + nonce + "SK")
+	backend = default_backend()
+
 	if cipher == 'aes128':
 		# Encrypt using aes128
-		BLOCK_SIZE = 128
-		
+		IV = hashlib.sha128(IVMsg).hexdigest()
+		SK = hashlib.sha128(SKMsg).hexdigest()
+		CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
+
 	elif cipher == 'aes256':
 		# Encrypt using aes256
-		toSend = resultOfEncryption
-		pass
-	elif cipher == 'null':
-		# Just send msg
-		toSend = msg
-		pass
+		IV = hashlib.sha256(IVMsg).hexdigest()
+		SK = hashlib.sha256(SKMsg).hexdigest()
+		CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
+
 
 """Log client activity to standard output"""
 def logging(msg):
@@ -166,12 +171,13 @@ if __name__ == "__main__":
 		# First message
 		# client → server: cipher, nonce
 		cipherNonceMsg = client.recv(BUFFER_SIZE).decode("utf-8").split(";")
-		CIPHER = cipherNonceMsg[0]
+		cCipher = cipherNonceMsg[0]
 		nonce = cipherNonceMsg[1]
 
-		logging("new connection from " + str(addr[0]) + " cipher = " + CIPHER)
+		logging("new connection from " + str(addr[0]) + " cipher = " + cCipher)
 		logging("nonce = " + nonce)
-		clientHandler(client, nonce, KEY) 
+		setCipher(cCipher, key, nonce)
+		clientHandler(client, key, nonce) 
 		# Final Success
 		# server → client: final success
 		logging("status: SUCCESS")
