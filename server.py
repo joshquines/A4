@@ -134,6 +134,7 @@ def clientHandler(client, cipher, nonce, key):
 	client.sendall(canDoEncrypt)
 
 	# If canDo was true, should be able to either download from client, or give file to client
+	# If canDo was not true, client closes connection
 
 
 
