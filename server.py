@@ -25,49 +25,43 @@ BLOCK_SIZE = 0
 def authentication(client, key, nonce):
     # https://codereview.stackexchange.com/questions/47529/creating-a-string-of-random-characters
     message = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
+	sendEncrypted(client, message)
 
-#def sendEncrypted(client, msg):
-    	
-#def recvEncrypted(client, msg):
 
-# Use this to send msg to server
-def encrypter(cipher, msg, nonce):
 
-	return toSend
+def sendEncrypted(client, msg):
+    padder = padding.PKCS7(BLOCK_SIZE).padder()
+	padded_data = padder.update(msg) + padder.finalize()
+	if CIPHER == 0:
+    	serverSocket.sendall(msg).encode()
+	else:
+		encrypt = CIPHER.encryptor()
+		toSend = encrypt.update(padded_data) + encrypt.finalize()
+		serverSocket.sendall(toSend).encode()
 
-# Use this to receive msg from server
-def decrypter(cipher,msg, nonce):
-	if cipher == 'aes128':
-		# Decrypt using aes128
-		toReceive = resultOfEncryption
-		pass
-	elif cipher == 'aes256':
-		# Decrypt using aes256
-		toReceive = resultOfEncryption
-		pass
-	elif cipher == 'null':
-		# Dest send msg
-		toReceive = msg
-		pass
-	return toReceive
+
+def recvEncrypted(client, msg):
+
 
 def read(client, filename):
 
 def write(client, filename):
 
 def setCipher(cCipher, key, nonce):
-	IVMsg = b(key + nonce + "IV")
-	SKMsg = b(key + nonce + "SK")
+	IVMsg = bytearray(key + nonce + "IV")
+	SKMsg = bytearray(key + nonce + "SK")
 	backend = default_backend()
-
+	global BLOCK_SIZE, CIPHER
 	if cipher == 'aes128':
 		# Encrypt using aes128
+		BLOCK_SIZE = 128
 		IV = hashlib.sha128(IVMsg).hexdigest()
 		SK = hashlib.sha128(SKMsg).hexdigest()
 		CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
 
 	elif cipher == 'aes256':
 		# Encrypt using aes256
+		BLOCK_SIZE = 256
 		IV = hashlib.sha256(IVMsg).hexdigest()
 		SK = hashlib.sha256(SKMsg).hexdigest()
 		CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)

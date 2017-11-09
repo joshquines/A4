@@ -37,11 +37,11 @@ def write(FILENAME):
 # SEND MESSAGE TO SERVER
 def sendMessage(serverSocket, msg):
 	if CIPHER == 'null':
-		serverSocket.sendall(msg).encode('utf-8')
+		serverSocket.sendall(msg).encode()
 	else:
 		encrypt = CIPHER.encryptor()
 		toSend = encrypt.update(msg) + encrypt.finalize()
-		serverSocket.sendall(toSend).encode('utf-8')
+		serverSocket.sendall(toSend).encode()
 		
 		
 
