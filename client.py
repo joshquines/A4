@@ -15,6 +15,7 @@ import time
 import traceback
 import select
 import string
+import hashlib
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
@@ -33,17 +34,37 @@ def read(FILENAME):
 
 def write(FILENAME):
 
+# FOR CHALLENGE
+def authentication(msg):
+	clientHash = bytearray(msg + KEY) 
+	m = hashlib.sha1()
+	m.update(clientHash)
+	response = m.digest()
+	return response
+	
 
 # SEND MESSAGE TO SERVER
-def sendMessage(serverSocket, msg):
-	if CIPHER == 'null':
+padder = padding.PKCS7(BLOCK_SIZE).padder()
+padded_data = padder.update(msg) + padder.finalize()
+def sendEncrypted(serverSocket, msg):
+	if CIPHER == 0:
 		serverSocket.sendall(msg).encode()
 	else:
 		encrypt = CIPHER.encryptor()
 		toSend = encrypt.update(msg) + encrypt.finalize()
 		serverSocket.sendall(toSend).encode()
-		
-		
+
+def recvEncrypted(serverSocket):
+	msg = serverSocket.recv().decode('utf-8')
+	if CIPHER == 0:
+		return msg 
+	else:
+	    unpadder = padding.PKCS7(128).unpadder()
+		data = unpadder.update(msg)
+		encryptedMsg = data + unpadder.finalize()
+		decrypt = CIPHER.decryptor()
+		msg = decryptor.update(encryptedMsg) + decryptor.finalize()
+		return msg
 
 def setCipher(cCipher, key, nonce):
 	IVMsg = bytearray(key + nonce + "IV")
@@ -78,18 +99,16 @@ def serverCOnnect(command, filename, hostname, port, cipher, key):
 	initMessage = CIPHER + ';' + NONCE
 	serverSocket.sendall(initMessage).encode()
 
-	# Get server response
-	initMessage = serverSocket.recv(BUFFER_SIZE) # eg. Cipher method is: x ****This is encrypted
-	initMessageDecrypted = decrypter(cipher, initMessage)
+	# Get challenge from server 
+	serverChallenge = recvEncrypted(serverSocket)
+	# Authenticate key 
+	toSend = authentication(serverChallenge)
+	# Send challenge response to serverSocket
+	sendEncrypted(serverSocket, toSend)
+	
+	
 
-	# AUTHENTICATION -----------------------------------------------------------------
-	# Send key (encrypted)
-	toServer = encrypter(CIPHER, KEY)
-	serverSocket.sendall(toServer).encode()
 
-	# Receive response
-	fromServer = serverSocket.recv(BUFFER_SIZE)
-	serverResponse = decrypter(CIPHER, fromServer)
 
 	# AUTHENTICATION RESULT
 	if serverResponse == False:
