@@ -57,6 +57,10 @@ def logging(msg):
 
 def clientHandler(client, cipher, nonce, key):
 	
+
+	# GET CIPHER TYPE
+	cipherType = cipher
+
 	# Authentication 
 	if(!authentication(client, key)):
     	logging("Error: wrong key")
@@ -86,7 +90,7 @@ def clientHandler(client, cipher, nonce, key):
 
 
 
-	""" THIS WHILE LOOP MAY NOT BE NEEDED *********************************************************"""
+	""" NVM WE NEED THIS WHILE LOOP TO SEND/RECEIVE *********************************************************"""
 	while 1:
 		readable, writeable, exceptional = select.select(inputs, [], [])
 		for sock in readable:
