@@ -19,7 +19,7 @@ import random
 #GLOBAL VARIABLES
 BUFFER_SIZE = 4096
 
-def authentication(client, key):
+def authentication(client, key, nonce):
     # https://codereview.stackexchange.com/questions/47529/creating-a-string-of-random-characters
     message = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
 
@@ -28,7 +28,7 @@ def authentication(client, key):
 #def recvEncrypted(client, msg):
 
 # Use this to send msg to server
-def encrypter(cipher, msg):
+def encrypter(cipher, msg, nonce):
 	if cipher == 'aes128':
 		# Encrypt using aes128
 		toSend = resultOfEncryption
@@ -44,7 +44,7 @@ def encrypter(cipher, msg):
 	return toSend
 
 # Use this to receive msg from server
-def decrypter(cipher,msg):
+def decrypter(cipher,msg, nonce):
 	if cipher == 'aes128':
 		# Decrypt using aes128
 		toReceive = resultOfEncryption
