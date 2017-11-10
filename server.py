@@ -32,20 +32,22 @@ def authentication(client, key, nonce):
     # https://codereview.stackexchange.com/questions/47529/creating-a-string-of-random-characters
     message = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
 	sendEncrypted(client, message)
+	# random challenge is for the client to send back SHA1(msg|key)
 	hashMsg = bytearray(msg + key)
 	answer = hashlib.sha1(hashMsg).hexdigest()
 	clientAnswer = recvEncrypted(client)
 
-	if answer != clientAnswer : 
+	if answer != clientAnswer: 
 		return False
 	else:
     	return True
 
 
 def sendEncrypted(client, msg):
+    byteMsg = bytearray(msg)
     # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
     padder = padding.PKCS7(BLOCK_SIZE).padder()
-	padded_data = padder.update(msg) + padder.finalize()
+	padded_data = padder.update(byteMsg) + padder.finalize()
 	if CIPHER == 0:
     	client.sendall(msg).encode()
 	else:
@@ -67,9 +69,52 @@ def recvEncrypted(client):
 	
 	return data
 
+
 def read(client, filename):
+    # Check if filename is a file
+    if not os.path.isfile(filename):
+    	logging("File does not exist")
+		sendEncrypted(client, "Error: " + filename + " could not be read by server")
+		client.close()
+		return
+	logging("Reading from file: " + filename)
+
+	# Open the file and read the correct size and send to the client
+	try:
+		with open(filename, 'rb') as rfile:
+			while 1:
+				content = rfile.read(BLOCK_SIZE)
+				if not content:
+					break
+				sendEncrypted(client, content)
+			logging("File successfully read")
+			sendEncrypted(client, "") # something to tell the client the file has ended
+			sendEncrypted(client, "OK")
+		rfile.close()
+	except:
+		logging("Could not open file to read")
+		sendEncrypted(client, "Error: File could not be opened")
+
 
 def write(client, filename):
+    try:
+		with open(filename, 'wb') as wfile:
+			while 1:
+    			content = recvEncrypted(client)
+				if not content:
+    				break
+				if content == '' # Something to tell the server the file has ended
+					break
+				wfile.write(content)
+			logging("File successfully written")
+			sendEncrypted(client, "OK")
+		wfile.close()
+	except:
+		sendEncrypted(client, "Error: File could not be opened")
+		logging("Could not opne file to write")
+		client.close()
+		return
+
 
 def setCipher(cCipher, key, nonce):
 	IVMsg = bytearray(key + nonce + "IV")
@@ -115,15 +160,17 @@ def logging(msg):
 
 
 def clientHandler(client, cipher, nonce, key):
-	
+	# Authenticate Client's key
 	if not authentication(client, key):
 		logging("Error: wrong key")
 		sendEncrypted(client, "Server: Incorrect Key Used")
 		client.close()
 		return
 	else:
+    	logging("Correct key used")
     	sendEncrypted(client, "Server: Correct Key! Send me your request")
 
+	# Client will send as operation;filename
 	request = recvEncrypted(client).decode("utf-8").split(";")
 
 	operation = request[0]
@@ -131,6 +178,7 @@ def clientHandler(client, cipher, nonce, key):
 
 	logging("Command: " + operation + " Filename: " + filename)
 
+	# Verify the reply
 	if operation == "read":
     	sendEncrypted(client, "Server: Valid Operation")
     	read(client, filename)
@@ -138,27 +186,9 @@ def clientHandler(client, cipher, nonce, key):
     	sendEncrypted(client, "Server: Valid Operation")
     	write(client, filename)
 	else:
-    	sendEncrypted(client, "Server: Invalid Operation. I can only read and write.")
-    	
+    	sendEncrypted(client, "Server: Unknown Operation. I can only read and write.")
+		client.close()
 
-	"""
-	# Get method + filename
-	clientFileRequestEncrypted = client.recv(BUFFER_SIZE).decode("utf-8")
-	clientFileRequest = decrypter(cipher, clientFileRequestEncrypted)
-	command = clientFileRequest.split(';')[0]
-	filename = clientFileRequest.split(';')[1]
-
-	# Check if server can do action
-	# Temporarily calling this function doAction, still gotta define it and find out how to do it
-	# doAction will return either True or False
-
-	canDo = doAction()
-	canDoEncrypt = encrypter(cipher, canDo)
-	client.sendall(canDoEncrypt)
-
-	# If canDo was true, should be able to either download from client, or give file to client
-	# If canDo was not true, client closes connection
-	"""
 
 
 if __name__ == "__main__":
@@ -176,13 +206,13 @@ if __name__ == "__main__":
 	print("Using secret key: " + str(KEY))
 
 	serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	HOST = socket.gethostname
+	HOST = socket.gethostname()
 	serverSocket.bind((HOST, PORT))
 	serverSocket.listen(5)
 
 	while 1:
 		client, addr = serverSocket.accept()
-		# First message
+		# First message in the clear
 		# client → server: cipher, nonce
 		cipherNonceMsg = client.recv(BUFFER_SIZE).decode("utf-8").split(";")
 		cCipher = cipherNonceMsg[0]
@@ -190,11 +220,13 @@ if __name__ == "__main__":
 
 		logging("new connection from " + str(addr[0]) + " cipher = " + cCipher)
 		logging("nonce = " + nonce)
-		setCipher(cCipher, key, nonce)
-
 		sendEncrypted(client, "Server: Cipher and nonce received.")
+		
+		logging("setting Cipher")
+		setCipher(cCipher, KEY, nonce)
 
-		clientHandler(client, key, nonce) 
+		logging("handling client")
+		clientHandler(client, KEY, nonce) 
 		# Final Success
 		# server → client: final success
 		logging("status: SUCCESS")
