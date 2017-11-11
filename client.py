@@ -47,10 +47,8 @@ def write(serverSocket):
 
 # FOR CHALLENGE
 def authentication(msg):
-    clientHash = bytearray(msg + KEY) 
-    m = hashlib.sha1()
-    m.update(clientHash)
-    response = m.digest()
+    clientHash = msg + KEY
+    response = hashlib.sha1(clientHash.encode()).hexdigest()
     return response
     
 

@@ -31,12 +31,14 @@ BLOCK_SIZE = 128
 def authentication(client, key):
     # https://codereview.stackexchange.com/questions/47529/creating-a-string-of-random-characters
     message = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(16))
+    logging("Message = " + message)
     sendEncrypted(client, message)
     # random challenge is for the client to send back SHA1(msg|key)
     hashMsg = message + key
     answer = hashlib.sha1(hashMsg.encode()).hexdigest()
+    logging("H(msg|key) = " + answer)
     clientAnswer = recvEncrypted(client)
-
+    logging("Client Answer = " + clientAnswer)
     if answer != clientAnswer: 
         return False
     else:
@@ -49,7 +51,7 @@ def sendEncrypted(client, msg):
     padder = padding.PKCS7(BLOCK_SIZE).padder()
     padded_data = padder.update(byteMsg) + padder.finalize()
     if CIPHER == 0:
-        client.sendall(msg.encode("utf-8"))
+        client.sendall(byteMsg)
     else:
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
         encryptor = CIPHER.encryptor()
@@ -60,14 +62,14 @@ def sendEncrypted(client, msg):
 def recvEncrypted(client):
     if CIPHER == 0:
         clientAns = client.recv(BUFFER_SIZE).decode("utf-8")
+        return clientAns
     else:
         clientAns = client.recv(BUFFER_SIZE)
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(clientAns) + decryptor.finalize()
         unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
         data = unpadder.update(dataRecvd) + unpadder.finalize()
-    
-    return data
+        return data
 
 
 def read(client, filename):
@@ -224,7 +226,7 @@ if __name__ == "__main__":
         clientHandler(client, KEY) 
         # Final Success
         # server → client: final success
-        logging("status: SUCCESS")
+        logging("End of main")
 
         client.close()
 
