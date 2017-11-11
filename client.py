@@ -20,6 +20,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 import os
+import random
 
 #GLOBAL VARIABLES
 BUFFER_SIZE = 4096
@@ -56,21 +57,23 @@ def authentication(msg):
 # SEND MESSAGE TO SERVER
 
 def sendEncrypted(serverSocket, msg):
+    byteMsg = msg.encode("utf-8")
     padder = padding.PKCS7(BLOCK_SIZE).padder()
-    padded_data = padder.update(msg) + padder.finalize()
+    padded_data = padder.update(byteMsg) + padder.finalize()
     if CIPHER == 0:
         serverSocket.sendall(msg).encode()
     else:
         encrypt = CIPHER.encryptor()
-        toSend = encrypt.update(msg) + encrypt.finalize()
+        toSend = encrypt.update(byteMsg) + encrypt.finalize()
         serverSocket.sendall(toSend).encode()
 
 def recvEncrypted(serverSocket):
-    msg = serverSocket.recv().decode('utf-8')
     if CIPHER == 0:
-        return msg 
+        msg = serverSocket.recv(BLOCK_SIZE).decode('utf-8')
+        return msg
     else:
-        unpadder = padding.PKCS7(128).unpadder()
+        msg = serverSocket.recv(BLOCK_SIZE).decode()
+        unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
         data = unpadder.update(msg)
         encryptedMsg = data + unpadder.finalize()
         decrypt = CIPHER.decryptor()
@@ -106,10 +109,12 @@ def serverConnect(command, filename, hostname, port, cipher, key):
     x = hostname, int(port)
     serverSocket.connect(x)
 
+    global NONCE
+    NONCE = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(16))
     # FIRST MESSAGE -----------------------------------------------------------------
     # Send to server for authentication. Only send CIPHER and NONCE
     initMessage = CIPHER + ';' + NONCE
-    serverSocket.sendall(initMessage).encode()
+    serverSocket.sendall(initMessage.encode("utf-8"))
 
     # Get challenge from server 
     serverChallenge = recvEncrypted(serverSocket)
