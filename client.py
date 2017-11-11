@@ -132,12 +132,12 @@ def serverCOnnect(command, filename, hostname, port, cipher, key):
 	serverResponse = recvEncrypted(serverSocket)
 
 	# DATA EXCHANGE ------------------------------------------------------------------
-	if serverResponse == True:
+	if serverResponse == "Server: Valid Operation":
 		# Start doing stuff with filename aka upload the file to the server
 		if COMMAND == 'read'
 			read(serverSocket):
 		elif COMMAND == 'write':
-			write(serverSocket
+			write(serverSocket)
 	else:
 		print("Server unable to do operation")
 		sys.close()
