@@ -30,7 +30,11 @@ BLOCK_SIZE = 0
 # The key received from the client is encrypted using cipher<x>
 def authentication(client, key, nonce):
     # https://codereview.stackexchange.com/questions/47529/creating-a-string-of-random-characters
+<<<<<<< Updated upstream
     message = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
+=======
+    message = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(16))
+>>>>>>> Stashed changes
     sendEncrypted(client, message)
     # random challenge is for the client to send back SHA1(msg|key)
     hashMsg = bytearray(msg + key)
@@ -44,17 +48,25 @@ def authentication(client, key, nonce):
 
 
 def sendEncrypted(client, msg):
-    byteMsg = bytearray(msg)
+    byteMsg = msg.encode("utf -8")
     # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
     padder = padding.PKCS7(BLOCK_SIZE).padder()
     padded_data = padder.update(byteMsg) + padder.finalize()
     if CIPHER == 0:
+<<<<<<< Updated upstream
         client.sendall(msg).encode()
+=======
+        client.sendall(msg)
+>>>>>>> Stashed changes
     else:
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
         encryptor = CIPHER.encryptor()
         toSend = encrypt.update(padded_data) + encrypt.finalize()
+<<<<<<< Updated upstream
         client.sendall(toSend).encode()
+=======
+        client.sendall(toSend)
+>>>>>>> Stashed changes
 
 
 def recvEncrypted(client):
@@ -103,7 +115,11 @@ def write(client, filename):
                 content = recvEncrypted(client)
                 if not content:
                     break
+<<<<<<< Updated upstream
                 if content == '': # Something to tell the server the file has ended
+=======
+                if content == 'OK': # Something to tell the server the file has ended
+>>>>>>> Stashed changes
                     break
                 wfile.write(content)
             logging("File successfully written")
@@ -195,7 +211,11 @@ if __name__ == "__main__":
 
     # Arg check
     if len(sys.argv) == 3:
+<<<<<<< Updated upstream
         PORT = sys.argv[1]
+=======
+        PORT = int(sys.argv[1])
+>>>>>>> Stashed changes
         KEY = sys.argv[2]
     else:
         print("\nIncorrect number of parameters: ")
@@ -206,8 +226,12 @@ if __name__ == "__main__":
     print("Using secret key: " + str(KEY))
 
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+<<<<<<< Updated upstream
     HOST = socket.gethostname()
     serverSocket.bind((HOST, int(PORT)))
+=======
+    serverSocket.bind(('', PORT))
+>>>>>>> Stashed changes
     serverSocket.listen(5)
 
     while 1:
