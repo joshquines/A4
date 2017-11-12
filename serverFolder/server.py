@@ -106,12 +106,9 @@ def read(client, filename):
 
 def write(client, filename):
     try:
-<<<<<<< Updated upstream
         with open(filename, 'w+') as wfile:
-=======
         logging("trying to write to " + filename)
         with open(filename, 'wb') as wfile:
->>>>>>> Stashed changes
             while 1:
                 content = recvEncrypted(client)
                 if not content:
