@@ -47,8 +47,8 @@ def write(serverSocket, filename):
     # Check if filename is a file
     if not os.path.isfile(filename):
         logging("File does not exist")
-        sendEncrypted(client, "Error: " + filename + " could not be read by server")
-        client.close()
+        sendEncrypted(serverSocket, "Error: " + filename + " could not be read")
+        serverSocket.close()
         return
 
     # Open the file and read the correct size and send to the server
