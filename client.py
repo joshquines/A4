@@ -65,7 +65,7 @@ def read(serverSocket, filename):
 def write(serverSocket, filename):
     # Check if filename is a file
     if not os.path.isfile(filename):
-        logging("File does not exist")
+        print("File does not exist")
         sendEncrypted(serverSocket, "Error: " + filename + " could not be read")
         serverSocket.close()
         return
@@ -75,10 +75,14 @@ def write(serverSocket, filename):
         with open(filename, 'r+') as rfile:
             while 1:
                 content = rfile.read(BLOCK_SIZE)
+                print("CONTENT: " + content)
                 if not content:
+                    print("not sending content")
+                    sendEncrypted(serverSocket, content)
                     break
+                print("Sending content")
                 sendEncrypted(serverSocket, content)
-            sendEncrypted(serverSocket, "") # something to tell the server the file has ended
+            #sendEncrypted(serverSocket, "") # something to tell the server the file has ended
         rfile.close()
     except:
         tb = traceback.format_exc()
@@ -193,15 +197,11 @@ def serverConnect(command, filename, hostname, port, cipher, key):
     # Get challenge result from server 
     keyResult = recvEncrypted(serverSocket)
     # Key check
-    if keyResult == "Incorrect Key Used":
-        print("Wrong key used.\nTerminating connection")
-        serverSocket.close()
-        sys.close()
-    else:
-        print("Key used was valid")
+    print(keyResult)
 
     # REQUEST ------------------------------------------------------------------------
     # Start sending stuff
+    print("Sending request")
     requestAction = command + ";" + filename
     sendEncrypted(serverSocket, requestAction)
 
@@ -209,15 +209,16 @@ def serverConnect(command, filename, hostname, port, cipher, key):
     serverResponse = recvEncrypted(serverSocket)
 
     # DATA EXCHANGE ------------------------------------------------------------------
+    print(serverResponse)
     if serverResponse == "Server: Valid Operation":
         # Start doing stuff with filename aka upload the file to the server
         if command == 'read':
+            print("Starting read")
             read(serverSocket, filename)
         elif command == 'write':
+            print("Starting write")
             write(serverSocket, filename)
-    else:
-        print("Server unable to do operation")
-        sys.exit()
+
 
     # FINAL RESULT -------------------------------------------------------------------
     print("SUCCESS MOTHAFUCKAAAAAAAAAA WOOOOOOOO")

@@ -110,15 +110,13 @@ def write(client, filename):
     try:
         with open(filename, 'w+') as wfile:
             logging("trying to write to " + filename)
-        with open(filename, 'w+') as wfile:
             while 1:
                 content = recvEncrypted(client)
-                wfile.write(content)
-                print("DEBUG CONTENT: " + str(content))
+                logging("CONTENT: " + str(content))
                 if not content:
+                    print("file has ended")
                     break
-                if content == 'OK': # Something to tell the server the file has ended
-                    break
+                logging("Writing content")
                 wfile.write(content)
             logging("File successfully written")
             sendEncrypted(client, "OK")

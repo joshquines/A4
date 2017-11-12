@@ -1,1 +1,1 @@
-Error: File could not be opened
+Error: ./test.txt could not be read by server
