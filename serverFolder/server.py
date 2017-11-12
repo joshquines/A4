@@ -98,11 +98,13 @@ def read(client, filename):
     except:
         logging("Could not open file to read")
         sendEncrypted(client, "Error: File could not be opened")
+        tb = traceback.format_exc()
+        print (tb)
 
 
 def write(client, filename):
     try:
-        with open(filename, 'wb') as wfile:
+        with open(filename, 'w+') as wfile:
             while 1:
                 content = recvEncrypted(client)
                 if not content:

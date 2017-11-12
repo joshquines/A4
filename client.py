@@ -30,18 +30,23 @@ cipherType = ['aes256','aes128','null']
 
 
 def read(serverSocket, filename):
-    f = open(filename, 'r')
-    fileData = f.read()
-    sendEncrypted(serverSocket, fileData)
-    f.close()
-
-"""
-def write(serverSocket, filename):
-    fileData = recvEncrypted(serverSocket)
-    f = open(filename, 'w')
-    f.write(fileData)
-    f.close()
-"""
+    try:
+        with open(filename, 'w+') as wfile:
+            while 1:
+                content = recvEncrypted(serverSocket)
+                if not content:
+                    break
+                if content == 'OK': # Something to tell the server the file has ended
+                    break
+                if content == "Error: Server could not open file":
+                    print(content)
+                    break
+                wfile.write(content)
+            #sendEncrypted(serverSocket, "OK")
+        wfile.close()
+    except:
+        serverSocket.close()
+        return
 
 def write(serverSocket, filename):
     # Check if filename is a file
@@ -56,6 +61,7 @@ def write(serverSocket, filename):
         with open(filename, 'rb') as rfile:
             while 1:
                 content = rfile.read(BLOCK_SIZE)
+
                 if not content:
                     break
                 sendEncrypted(serverSocket, content)
@@ -89,32 +95,24 @@ def sendEncrypted(serverSocket, msg):
         toSend = encrypt.update(byteMsg) + encrypt.finalize()
         serverSocket.sendall(toSend).encode()
     """
-    byteMsg = msg.encode("utf -8")
-    if CIPHER == 0:
-        serverSocket.sendall(byteMsg)
-    else:
-         # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
-        padder = padding.PKCS7(BLOCK_SIZE).padder()
-        padded_data = padder.update(byteMsg) + padder.finalize()
-        # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
-        encryptor = CIPHER.encryptor()
-        toSend = encryptor.update(padded_data) + encryptor.finalize()
-        serverSocket.sendall(toSend)
+    try:
+        byteMsg = msg.encode("utf-8")
+        if CIPHER == 0:
+            serverSocket.sendall(byteMsg)
+        else:
+             # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
+            padder = padding.PKCS7(BLOCK_SIZE).padder()
+            padded_data = padder.update(byteMsg) + padder.finalize()
+            # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
+            encryptor = CIPHER.encryptor()
+            toSend = encryptor.update(padded_data) + encryptor.finalize()
+            serverSocket.sendall(toSend)
+    except:
+        tb = traceback.format_exc()
+        print (tb)
 
 def recvEncrypted(serverSocket):
-    """
-    if CIPHER == 0:
-        msg = serverSocket.recv(BLOCK_SIZE).decode('utf-8')
-        return msg
-    else:
-        msg = serverSocket.recv(BLOCK_SIZE).decode()
-        unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
-        data = unpadder.update(msg)
-        encryptedMsg = data + unpadder.finalize()
-        decrypt = CIPHER.decryptor()
-        msg = decryptor.update(encryptedMsg) + decryptor.finalize()
-        return msg
-    """
+
     if CIPHER == 0:
         challenge = serverSocket.recv(BUFFER_SIZE).decode("utf-8")
         return challenge
@@ -211,13 +209,6 @@ def serverConnect(command, filename, hostname, port, cipher, key):
 
     # FINAL RESULT -------------------------------------------------------------------
     print("SUCCESS MOTHAFUCKAAAAAAAAAA WOOOOOOOO")
-                  
-
-
-
-
-    
-
 
 if __name__ == "__main__":
 
@@ -248,10 +239,11 @@ if __name__ == "__main__":
             sys.exit()
 
         # CHECK IF FILENAME EXISTS
-        fileCheck = os.path.isfile(filename)
-        if fileCheck == False:
-            print("File: \'" + str(filename) + "\'does not exist")
-            sys.exit()
+        if command == 'write':
+            fileCheck = os.path.isfile(filename)
+            if fileCheck == False:
+                print("File: \'" + str(filename) + "\'does not exist")
+                sys.exit()
 
         # START
         serverConnect(command, filename, HOST, PORT, cipher, key)
