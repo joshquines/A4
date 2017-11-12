@@ -35,11 +35,37 @@ def read(serverSocket, filename):
     sendEncrypted(serverSocket, fileData)
     f.close()
 
+"""
 def write(serverSocket, filename):
     fileData = recvEncrypted(serverSocket)
     f = open(filename, 'w')
     f.write(fileData)
     f.close()
+"""
+
+def write(serverSocket, filename):
+    # Check if filename is a file
+    if not os.path.isfile(filename):
+        logging("File does not exist")
+        sendEncrypted(client, "Error: " + filename + " could not be read by server")
+        client.close()
+        return
+
+    # Open the file and read the correct size and send to the server
+    try:
+        with open(filename, 'rb') as rfile:
+            while 1:
+                content = rfile.read(BLOCK_SIZE)
+                if not content:
+                    break
+                sendEncrypted(serverSocket, content)
+            sendEncrypted(serverSocket, "") # something to tell the server the file has ended
+            sendEncrypted(serverSocket, "OK")
+        rfile.close()
+    except:
+        tb = traceback.format_exc()
+        print (tb)
+
 
 # FOR CHALLENGE
 def authentication(msg, key):
