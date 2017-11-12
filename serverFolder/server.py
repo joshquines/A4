@@ -107,10 +107,12 @@ def read(client, filename):
 def write(client, filename):
     try:
         with open(filename, 'w+') as wfile:
-        logging("trying to write to " + filename)
+            logging("trying to write to " + filename)
         with open(filename, 'wb') as wfile:
             while 1:
                 content = recvEncrypted(client)
+                wfile.write(content)
+                print("DEBUG CONTENT: " + str(content))
                 if not content:
                     break
                 if content == 'OK': # Something to tell the server the file has ended
@@ -122,6 +124,8 @@ def write(client, filename):
     except:
         sendEncrypted(client, "Error: File could not be opened")
         logging("Could not open file to write")
+        tb = traceback.format_exc()
+        print (tb)
         client.close()
         return
 

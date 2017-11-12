@@ -34,6 +34,13 @@ def read(serverSocket, filename):
         with open(filename, 'w+') as wfile:
             while 1:
                 content = recvEncrypted(serverSocket)
+                print("CONTENT: " + str(content))
+                break
+                """
+                while content != "File successfully read":
+                    print("printing")
+                    wfile.write(content)
+                    
                 if not content:
                     wfile.write(content)
                     break
@@ -45,6 +52,7 @@ def read(serverSocket, filename):
                     print(content)
                     break
                 #wfile.write(content)
+                """
             #sendEncrypted(serverSocket, "OK")
         wfile.close()
     except:
@@ -64,7 +72,6 @@ def write(serverSocket, filename):
         with open(filename, 'rb') as rfile:
             while 1:
                 content = rfile.read(BLOCK_SIZE)
-
                 if not content:
                     break
                 sendEncrypted(serverSocket, content)
