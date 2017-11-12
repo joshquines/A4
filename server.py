@@ -212,6 +212,8 @@ if __name__ == "__main__":
         # First message in the clear
         # client → server: cipher, nonce
         cipherNonceMsg = client.recv(BUFFER_SIZE).decode("utf-8").split(";")
+        logging("cipher = " + cipherNonceMsg[0])
+        logging("nonce = " + cipherNonceMsg[1] )
         cCipher = cipherNonceMsg[0]
         nonce = cipherNonceMsg[1]
 

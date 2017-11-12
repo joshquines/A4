@@ -26,7 +26,7 @@ import random
 BUFFER_SIZE = 4096
 BLOCK_SIZE = 0
 NONCE = None 
-CIPHER = None 
+CIPHER = 0
 HOST = None 
 KEY = None 
 FILENAME = None
@@ -55,6 +55,7 @@ def authentication(msg):
 # SEND MESSAGE TO SERVER
 
 def sendEncrypted(serverSocket, msg):
+    """
     byteMsg = msg.encode("utf-8")
     padder = padding.PKCS7(BLOCK_SIZE).padder()
     padded_data = padder.update(byteMsg) + padder.finalize()
@@ -64,8 +65,21 @@ def sendEncrypted(serverSocket, msg):
         encrypt = CIPHER.encryptor()
         toSend = encrypt.update(byteMsg) + encrypt.finalize()
         serverSocket.sendall(toSend).encode()
+    """
+    byteMsg = msg.encode("utf -8")
+    # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
+    padder = padding.PKCS7(BLOCK_SIZE).padder()
+    padded_data = padder.update(byteMsg) + padder.finalize()
+    if CIPHER == 0:
+        serverSocket.sendall(byteMsg)
+    else:
+        # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
+        encryptor = CIPHER.encryptor()
+        toSend = encryptor.update(padded_data) + encryptor.finalize()
+        serverSocket.sendall(toSend)
 
 def recvEncrypted(serverSocket):
+    """
     if CIPHER == 0:
         msg = serverSocket.recv(BLOCK_SIZE).decode('utf-8')
         return msg
@@ -77,23 +91,38 @@ def recvEncrypted(serverSocket):
         decrypt = CIPHER.decryptor()
         msg = decryptor.update(encryptedMsg) + decryptor.finalize()
         return msg
+    """
+    if CIPHER == 0:
+        challenge = serverSocket.recv(BUFFER_SIZE).decode("utf-8")
+        return challenge
+    else:
+        challenge = serverSocket.recv(BUFFER_SIZE)
+        decryptor = CIPHER.decryptor()
+        dataRecvd = decryptor.update(challenge) + decryptor.finalize()
+        unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
+        data = unpadder.update(dataRecvd) + unpadder.finalize()
+        return data
 
 def setCipher(cCipher, key, nonce):
-    IVMsg = bytearray(key + nonce + "IV")
-    SKMsg = bytearray(key + nonce + "SK")
+    IVMsg = key + nonce + "IV"
+    SKMsg = key + nonce + "SK"
     backend = default_backend()
-
-    if cipher == 'aes128':
+    IV = hashlib.sha256(IVMsg.encode()).hexdigest()
+    SK = hashlib.sha256(SKMsg.encode()).hexdigest()
+    print("IV = " + str(IV))
+    print("SK = " + str(SK))
+    global BLOCK_SIZE, CIPHER
+    if cCipher == 'aes128':
         # Encrypt using aes128
-        IV = hashlib.sha128(IVMsg).hexdigest()
-        SK = hashlib.sha128(SKMsg).hexdigest()
-        CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
+        BLOCK_SIZE = 128
+        CIPHER = Cipher(algorithms.AES(SK[:16].encode()), modes.CBC(IV[:16].encode()), backend=backend)
 
-    elif cipher == 'aes256':
+    elif cCipher == 'aes256':
         # Encrypt using aes256
-        IV = hashlib.sha256(IVMsg).hexdigest()
-        SK = hashlib.sha256(SKMsg).hexdigest()
+        BLOCK_SIZE = 256
         CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
+    else:
+        print("Null cipher being used, IV and SK not needed")
 
 
 
@@ -106,11 +135,13 @@ def serverConnect(command, filename, hostname, port, cipher, key):
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     x = hostname, int(port)
     serverSocket.connect(x)
-
+   
     global NONCE
     NONCE = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(16))
+    print("nonce = " + NONCE)
     # FIRST MESSAGE -----------------------------------------------------------------
     # Send to server for authentication. Only send CIPHER and NONCE
+    setCipher(cipher, key, NONCE)
     initMessage = CIPHER + ';' + NONCE
     serverSocket.sendall(initMessage.encode("utf-8"))
 
