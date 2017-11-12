@@ -38,7 +38,7 @@ def authentication(client, key):
     answer = hashlib.sha1(hashMsg.encode()).hexdigest()
     logging("H(msg|key) = " + answer)
     clientAnswer = recvEncrypted(client)
-    logging("Client Answer = " + clientAnswer)
+    logging("Client's Answer = " + clientAnswer)
     if answer != clientAnswer: 
         return False
     else:
@@ -47,12 +47,12 @@ def authentication(client, key):
 
 def sendEncrypted(client, msg):
     byteMsg = msg.encode("utf -8")
-    # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
-    padder = padding.PKCS7(BLOCK_SIZE).padder()
-    padded_data = padder.update(byteMsg) + padder.finalize()
     if CIPHER == 0:
         client.sendall(byteMsg)
     else:
+        # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
+        padder = padding.PKCS7(BLOCK_SIZE).padder()
+        padded_data = padder.update(byteMsg) + padder.finalize()
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(padded_data) + encryptor.finalize()
@@ -60,16 +60,18 @@ def sendEncrypted(client, msg):
 
 
 def recvEncrypted(client):
-    if CIPHER == 0:
-        clientAns = client.recv(BUFFER_SIZE).decode("utf-8")
-        return clientAns
-    else:
-        clientAns = client.recv(BUFFER_SIZE)
+    if CIPHER != 0:
+        logging("cipher not equal to 0")
+        message = client.recv(BUFFER_SIZE)
         decryptor = CIPHER.decryptor()
-        dataRecvd = decryptor.update(clientAns) + decryptor.finalize()
+        dataRecvd = decryptor.update(message) + decryptor.finalize()
         unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
         data = unpadder.update(dataRecvd) + unpadder.finalize()
         return data
+    else:
+        message = client.recv(BUFFER_SIZE).decode("utf-8")
+        return message
+        
 
 
 def read(client, filename):
@@ -137,6 +139,7 @@ def setCipher(cCipher, key, nonce):
         BLOCK_SIZE = 256
         CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
     else:
+        CIPHER = 0
         logging("Null cipher being used, IV and SK not needed")
 
 
@@ -169,7 +172,7 @@ def clientHandler(client, key):
         sendEncrypted(client, "Server: Correct Key! Send me your request")
 
     # Client will send as operation;filename
-    request = recvEncrypted(client).decode("utf-8").split(";")
+    request = recvEncrypted(client).split(";")
 
     operation = request[0]
     filename = request[1]

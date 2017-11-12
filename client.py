@@ -25,30 +25,27 @@ import random
 #GLOBAL VARIABLES
 BUFFER_SIZE = 4096
 BLOCK_SIZE = 0
-NONCE = None 
 CIPHER = 0
-HOST = None 
-KEY = None 
-FILENAME = None
 cipherType = ['aes256','aes128','null']
 
 
-def read(serverSocket):
-    f = open(FILENAME, 'r')
+def read(serverSocket, filename):
+    f = open(filename, 'r')
     fileData = f.read()
     sendEncrypted(serverSocket, fileData)
     f.close()
 
-def write(serverSocket):
+def write(serverSocket, filename):
     fileData = recvEncrypted(serverSocket)
-    f = open(FILENAME, 'w')
+    f = open(filename, 'w')
     f.write(fileData)
     f.close()
 
 # FOR CHALLENGE
-def authentication(msg):
-    clientHash = msg + KEY
+def authentication(msg, key):
+    clientHash = msg + key
     response = hashlib.sha1(clientHash.encode()).hexdigest()
+    print("My Answer = " + response)
     return response
     
 
@@ -67,12 +64,12 @@ def sendEncrypted(serverSocket, msg):
         serverSocket.sendall(toSend).encode()
     """
     byteMsg = msg.encode("utf -8")
-    # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
-    padder = padding.PKCS7(BLOCK_SIZE).padder()
-    padded_data = padder.update(byteMsg) + padder.finalize()
     if CIPHER == 0:
         serverSocket.sendall(byteMsg)
     else:
+         # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
+        padder = padding.PKCS7(BLOCK_SIZE).padder()
+        padded_data = padder.update(byteMsg) + padder.finalize()
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(padded_data) + encryptor.finalize()
@@ -122,6 +119,7 @@ def setCipher(cCipher, key, nonce):
         BLOCK_SIZE = 256
         CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
     else:
+        CIPHER = 0
         print("Null cipher being used, IV and SK not needed")
 
 
@@ -142,13 +140,18 @@ def serverConnect(command, filename, hostname, port, cipher, key):
     # FIRST MESSAGE -----------------------------------------------------------------
     # Send to server for authentication. Only send CIPHER and NONCE
     setCipher(cipher, key, NONCE)
-    initMessage = CIPHER + ';' + NONCE
+    initMessage = cipher + ';' + NONCE
     serverSocket.sendall(initMessage.encode("utf-8"))
+
+    # Server should response with ack when cipher and nonce are received
+    ack = recvEncrypted(serverSocket)
+    print(ack)
 
     # Get challenge from server 
     serverChallenge = recvEncrypted(serverSocket)
+    print("Server's Challenge = " + serverChallenge)
     # Authenticate key 
-    toSend = authentication(serverChallenge)
+    toSend = authentication(serverChallenge, key)
     # Send challenge response to serverSocket
     sendEncrypted(serverSocket, toSend)
     # Get challenge result from server 
@@ -163,7 +166,7 @@ def serverConnect(command, filename, hostname, port, cipher, key):
 
     # REQUEST ------------------------------------------------------------------------
     # Start sending stuff
-    requestAction = COMMAND + ";" + FILENAME
+    requestAction = command + ";" + filename
     sendEncrypted(serverSocket, requestAction)
 
     # Get server response True/False (Server: I can do this action/I cannot do this action)
@@ -172,13 +175,13 @@ def serverConnect(command, filename, hostname, port, cipher, key):
     # DATA EXCHANGE ------------------------------------------------------------------
     if serverResponse == "Server: Valid Operation":
         # Start doing stuff with filename aka upload the file to the server
-        if COMMAND == 'read':
-            read(serverSocket)
-        elif COMMAND == 'write':
-            write(serverSocket)
+        if command == 'read':
+            read(serverSocket, filename)
+        elif command == 'write':
+            write(serverSocket, filename)
     else:
         print("Server unable to do operation")
-        sys.close()
+        sys.exit()
 
     # FINAL RESULT -------------------------------------------------------------------
     print("SUCCESS MOTHAFUCKAAAAAAAAAA WOOOOOOOO")
@@ -194,10 +197,11 @@ if __name__ == "__main__":
 
     # CHECK ARGS
     if len(sys.argv) == 6:
-        COMMAND = sys.argv[1]
-        FILENAME = sys.argv[2]
-        CIPHER = sys.argv[4]
-        KEY = sys.argv[5]
+        command = sys.argv[1]
+        filename = sys.argv[2]
+        cipher = sys.argv[4]
+        key = sys.argv[5]
+        print("Key = " + key)
         
         # CHECK IF HOSTNAME:PORT IS CORRECT
         try:
@@ -213,18 +217,18 @@ if __name__ == "__main__":
             sys.exit()
 
         # CHECK IF CIPHERTYPE IS VALID
-        if CIPHER not in cipherType:
+        if cipher not in cipherType:
             print("Cipher not available. Please use aes256, aes128 or null")
             sys.exit()
 
         # CHECK IF FILENAME EXISTS
-        fileCheck = os.path.isfile(FILENAME)
+        fileCheck = os.path.isfile(filename)
         if fileCheck == False:
-            print("File: \'" + str(FILENAME) + "\'does not exist")
+            print("File: \'" + str(filename) + "\'does not exist")
             sys.exit()
 
         # START
-        serverConnect(COMMAND, FILENAME, HOST, PORT, CIPHER, KEY)
+        serverConnect(command, filename, HOST, PORT, cipher, key)
 
     else:
         print("\nIncorrect number of parameters: ")
