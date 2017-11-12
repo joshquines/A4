@@ -20,7 +20,7 @@ import hashlib
 #GLOBAL VARIABLES
 BUFFER_SIZE = 4096
 CIPHER = 0
-BLOCK_SIZE = 0
+BLOCK_SIZE = 128
 
 
 # Authentication
@@ -28,15 +28,17 @@ BLOCK_SIZE = 0
     # client → server: compute and send back a reply that can only be computed if secret key is known
     # server → client: verify the reply, send success/failure message to client
 # The key received from the client is encrypted using cipher<x>
-def authentication(client, key, nonce):
+def authentication(client, key):
     # https://codereview.stackexchange.com/questions/47529/creating-a-string-of-random-characters
     message = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(16))
+    logging("Message = " + message)
     sendEncrypted(client, message)
     # random challenge is for the client to send back SHA1(msg|key)
-    hashMsg = bytearray(msg + key)
-    answer = hashlib.sha1(hashMsg).hexdigest()
+    hashMsg = message + key
+    answer = hashlib.sha1(hashMsg.encode()).hexdigest()
+    logging("H(msg|key) = " + answer)
     clientAnswer = recvEncrypted(client)
-
+    logging("Client's Answer = " + clientAnswer)
     if answer != clientAnswer: 
         return False
     else:
@@ -45,29 +47,31 @@ def authentication(client, key, nonce):
 
 def sendEncrypted(client, msg):
     byteMsg = msg.encode("utf -8")
-    # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
-    padder = padding.PKCS7(BLOCK_SIZE).padder()
-    padded_data = padder.update(byteMsg) + padder.finalize()
     if CIPHER == 0:
-        client.sendall(msg)
+        client.sendall(byteMsg)
     else:
+        # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
+        padder = padding.PKCS7(BLOCK_SIZE).padder()
+        padded_data = padder.update(byteMsg) + padder.finalize()
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
         encryptor = CIPHER.encryptor()
-        toSend = encrypt.update(padded_data) + encrypt.finalize()
+        toSend = encryptor.update(padded_data) + encryptor.finalize()
         client.sendall(toSend)
 
 
 def recvEncrypted(client):
-    if CIPHER == 0:
-        clientAns = client.recv(BUFFER_SIZE).decode("utf-8")
-    else:
-        clientAns = client.recv(BUFFER_SIZE)
+    if CIPHER != 0:
+        logging("cipher not equal to 0")
+        message = client.recv(BUFFER_SIZE)
         decryptor = CIPHER.decryptor()
-        dataRecvd = decryptor.update(clientAns) + decryptor.finalize()
+        dataRecvd = decryptor.update(message) + decryptor.finalize()
         unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
-        data = unpadder.update(dataRecvd) + decryptor.finalize()
-    
-    return data
+        data = unpadder.update(dataRecvd) + unpadder.finalize()
+        return data
+    else:
+        message = client.recv(BUFFER_SIZE).decode("utf-8")
+        return message
+        
 
 
 def read(client, filename):
@@ -117,28 +121,25 @@ def write(client, filename):
 
 
 def setCipher(cCipher, key, nonce):
-    IVMsg = bytearray(key + nonce + "IV")
-    SKMsg = bytearray(key + nonce + "SK")
+    IVMsg = key + nonce + "IV"
+    SKMsg = key + nonce + "SK"
     backend = default_backend()
+    IV = hashlib.sha256(IVMsg.encode()).hexdigest()
+    SK = hashlib.sha256(SKMsg.encode()).hexdigest()
+    logging("IV = " + str(IV))
+    logging("SK = " + str(SK))
     global BLOCK_SIZE, CIPHER
-    if cipher == 'aes128':
+    if cCipher == 'aes128':
         # Encrypt using aes128
         BLOCK_SIZE = 128
-        IV = hashlib.sha128(IVMsg).hexdigest()
-        SK = hashlib.sha128(SKMsg).hexdigest()
-        logging("IV = " + IV)
-        logging("SK = " + SK)
-        CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
+        CIPHER = Cipher(algorithms.AES(SK[:16].encode()), modes.CBC(IV[:16].encode()), backend=backend)
 
-    elif cipher == 'aes256':
+    elif cCipher == 'aes256':
         # Encrypt using aes256
         BLOCK_SIZE = 256
-        IV = hashlib.sha256(IVMsg).hexdigest()
-        SK = hashlib.sha256(SKMsg).hexdigest()
-        logging("IV = " + IV)
-        logging("SK = " + SK)
         CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
     else:
+        CIPHER = 0
         logging("Null cipher being used, IV and SK not needed")
 
 
@@ -159,7 +160,7 @@ def logging(msg):
         # server → client: optional error message
 
 
-def clientHandler(client, cipher, nonce, key):
+def clientHandler(client, key):
     # Authenticate Client's key
     if not authentication(client, key):
         logging("Error: wrong key")
@@ -171,7 +172,7 @@ def clientHandler(client, cipher, nonce, key):
         sendEncrypted(client, "Server: Correct Key! Send me your request")
 
     # Client will send as operation;filename
-    request = recvEncrypted(client).decode("utf-8").split(";")
+    request = recvEncrypted(client).split(";")
 
     operation = request[0]
     filename = request[1]
@@ -214,6 +215,8 @@ if __name__ == "__main__":
         # First message in the clear
         # client → server: cipher, nonce
         cipherNonceMsg = client.recv(BUFFER_SIZE).decode("utf-8").split(";")
+        logging("cipher = " + cipherNonceMsg[0])
+        logging("nonce = " + cipherNonceMsg[1] )
         cCipher = cipherNonceMsg[0]
         nonce = cipherNonceMsg[1]
 
@@ -225,10 +228,10 @@ if __name__ == "__main__":
         setCipher(cCipher, KEY, nonce)
 
         logging("handling client")
-        clientHandler(client, KEY, nonce) 
+        clientHandler(client, KEY) 
         # Final Success
         # server → client: final success
-        logging("status: SUCCESS")
+        logging("End of main")
 
         client.close()
 
