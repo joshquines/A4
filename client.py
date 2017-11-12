@@ -69,7 +69,7 @@ def write(serverSocket, filename):
 
     # Open the file and read the correct size and send to the server
     try:
-        with open(filename, 'rb') as rfile:
+        with open(filename, 'r+') as rfile:
             while 1:
                 content = rfile.read(BLOCK_SIZE)
                 if not content:

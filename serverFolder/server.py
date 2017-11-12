@@ -108,7 +108,7 @@ def write(client, filename):
     try:
         with open(filename, 'w+') as wfile:
             logging("trying to write to " + filename)
-        with open(filename, 'wb') as wfile:
+        with open(filename, 'w+') as wfile:
             while 1:
                 content = recvEncrypted(client)
                 wfile.write(content)
