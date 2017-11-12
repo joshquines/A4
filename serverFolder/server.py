@@ -89,13 +89,15 @@ def read(client, filename):
     # Open the file and read the correct size and send to the client
     try:
         logging("Trying to read " + filename)
-        with open(filename, 'rb') as rfile:
+        with open(filename, 'r+') as rfile:
             content = rfile.read(BLOCK_SIZE-1)
+            #sendEncrypted(client, content)
             while content:
                 sendEncrypted(client, content)
                 content = rfile.read(BLOCK_SIZE-1)
+                print("DEBUG: PRINTING CONTENT")
             logging("File successfully read")
-            sendEncrypted(client, "") # something to tell the client the file has ended
+            sendEncrypted(client, "end of fukin file fam") # something to tell the client the file has ended
         rfile.close()
     except:
         logging("Could not open file to read")
