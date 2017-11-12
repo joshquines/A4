@@ -24,7 +24,7 @@ import random
 
 #GLOBAL VARIABLES
 BUFFER_SIZE = 4096
-BLOCK_SIZE = 0
+BLOCK_SIZE = 128
 CIPHER = 0
 cipherType = ['aes256','aes128','null']
 
@@ -66,7 +66,6 @@ def write(serverSocket, filename):
                     break
                 sendEncrypted(serverSocket, content)
             sendEncrypted(serverSocket, "") # something to tell the server the file has ended
-            sendEncrypted(serverSocket, "OK")
         rfile.close()
     except:
         tb = traceback.format_exc()
@@ -97,27 +96,27 @@ def sendEncrypted(serverSocket, msg):
     """
     try:
         byteMsg = msg.encode("utf-8")
-        if CIPHER == 0:
-            serverSocket.sendall(byteMsg)
-        else:
-             # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
-            padder = padding.PKCS7(BLOCK_SIZE).padder()
-            padded_data = padder.update(byteMsg) + padder.finalize()
-            # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
-            encryptor = CIPHER.encryptor()
-            toSend = encryptor.update(padded_data) + encryptor.finalize()
-            serverSocket.sendall(toSend)
     except:
-        tb = traceback.format_exc()
-        print (tb)
+        byteMsg = msg
+
+    if CIPHER == 0:
+        serverSocket.sendall(byteMsg)
+    else:
+         # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
+        padder = padding.PKCS7(BLOCK_SIZE).padder()
+        padded_data = padder.update(byteMsg) + padder.finalize()
+        # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
+        encryptor = CIPHER.encryptor()
+        toSend = encryptor.update(padded_data) + encryptor.finalize()
+        serverSocket.sendall(toSend)
 
 def recvEncrypted(serverSocket):
 
     if CIPHER == 0:
-        challenge = serverSocket.recv(BUFFER_SIZE).decode("utf-8")
+        challenge = serverSocket.recv(BLOCK_SIZE).decode("utf-8")
         return challenge
     else:
-        challenge = serverSocket.recv(BUFFER_SIZE)
+        challenge = serverSocket.recv(BLOCK_SIZE)
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(challenge) + decryptor.finalize()
         unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()

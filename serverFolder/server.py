@@ -46,7 +46,10 @@ def authentication(client, key):
 
 
 def sendEncrypted(client, msg):
-    byteMsg = msg.encode("utf -8")
+    try:
+        byteMsg = msg.encode("utf -8")
+    except:
+        byteMsg = msg
     if CIPHER == 0:
         client.sendall(byteMsg)
     else:
@@ -62,7 +65,7 @@ def sendEncrypted(client, msg):
 def recvEncrypted(client):
     if CIPHER != 0:
         logging("cipher not equal to 0")
-        message = client.recv(BUFFER_SIZE)
+        message = client.recv(BLOCK_SIZE)
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(message) + decryptor.finalize()
         unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
@@ -85,15 +88,14 @@ def read(client, filename):
 
     # Open the file and read the correct size and send to the client
     try:
+        logging("Trying to read " + filename)
         with open(filename, 'rb') as rfile:
-            while 1:
-                content = rfile.read(BLOCK_SIZE)
-                if not content:
-                    break
+            content = rfile.read(BLOCK_SIZE-1)
+            while content:
                 sendEncrypted(client, content)
+                content = rfile.read(BLOCK_SIZE-1)
             logging("File successfully read")
             sendEncrypted(client, "") # something to tell the client the file has ended
-            sendEncrypted(client, "OK")
         rfile.close()
     except:
         logging("Could not open file to read")
@@ -104,7 +106,12 @@ def read(client, filename):
 
 def write(client, filename):
     try:
+<<<<<<< Updated upstream
         with open(filename, 'w+') as wfile:
+=======
+        logging("trying to write to " + filename)
+        with open(filename, 'wb') as wfile:
+>>>>>>> Stashed changes
             while 1:
                 content = recvEncrypted(client)
                 if not content:
@@ -117,7 +124,7 @@ def write(client, filename):
         wfile.close()
     except:
         sendEncrypted(client, "Error: File could not be opened")
-        logging("Could not opne file to write")
+        logging("Could not open file to write")
         client.close()
         return
 
@@ -228,6 +235,7 @@ if __name__ == "__main__":
         
         logging("setting Cipher")
         setCipher(cCipher, KEY, nonce)
+        logging("Block Size = " + str(BLOCK_SIZE))
 
         logging("handling client")
         clientHandler(client, KEY) 
