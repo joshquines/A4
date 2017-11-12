@@ -35,13 +35,16 @@ def read(serverSocket, filename):
             while 1:
                 content = recvEncrypted(serverSocket)
                 if not content:
+                    wfile.write(content)
                     break
                 if content == 'OK': # Something to tell the server the file has ended
+                    wfile.write(content)
                     break
+
                 if content == "Error: Server could not open file":
                     print(content)
                     break
-                wfile.write(content)
+                #wfile.write(content)
             #sendEncrypted(serverSocket, "OK")
         wfile.close()
     except:
