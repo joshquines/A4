@@ -133,27 +133,29 @@ def sendEncrypted(serverSocket, msg):
          # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
         #old padder = padding.PKCS7(BLOCK_SIZE).padder()
         #old padded_data = padder.update(byteMsg) + padder.finalize()
-        padded_data = pad(byteMsg)
+        #padded_data = pad(byteMsg)
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
+        length = 16 - (len(byteMsg) % 16)
+        byteMsg += bytes([length])*length
         encryptor = CIPHER.encryptor()
-        toSend = encryptor.update(padded_data) + encryptor.finalize()
+        toSend = encryptor.update(byteMsg) + encryptor.finalize()
         serverSocket.sendall(toSend)
 
 def recvEncrypted(serverSocket):
-
     if CIPHER == 0:
         data = serverSocket.recv(BLOCK_SIZE).decode("utf-8")
         return data
     else:
-        challenge = serverSocket.recv(BLOCK_SIZE)
+        data = serverSocket.recv(BLOCK_SIZE)
+        print("data length = " + str(len(data)))
         decryptor = CIPHER.decryptor()
-        dataRecvd = decryptor.update(challenge) + decryptor.finalize()
-        #old unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
+        dataRecvd = decryptor.update(data) + decryptor.finalize()
+        #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
+        dataRecvd = dataRecvd[:-dataRecvd[-1]]
+        #data = unpadder.update(dataRecvd) + unpadder.finalize()
 
-        #old data = unpadder.update(dataRecvd) + unpadder.finalize()
-
-        data = unpad(cipher.decrypt(dataRecvd))
-        return data
+        #data = unpad(cipher.decrypt(dataRecvd))
+        return dataRecvd
 
 def setCipher(cCipher, key, nonce):
     IVMsg = key + nonce + "IV"
@@ -207,7 +209,7 @@ def serverConnect(command, filename, hostname, port, cipher, key):
 
     # Get challenge from server 
     serverChallenge = recvEncrypted(serverSocket)
-    print("Server's Challenge = " + serverChallenge)
+    print("Server's Challenge = " + str(serverChallenge))
     # Authenticate key 
     toSend = authentication(serverChallenge, key)
     # Send challenge response to serverSocket

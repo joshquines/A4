@@ -42,7 +42,7 @@ def authentication(client, key):
     answer = hashlib.sha1(hashMsg.encode()).hexdigest()
     logging("H(msg|key) = " + answer)
     clientAnswer = recvEncrypted(client)
-    logging("Client's Answer = " + clientAnswer)
+    logging("Client's Answer = " + str(clientAnswer))
     if answer != clientAnswer: 
         return False
     else:
@@ -51,20 +51,34 @@ def authentication(client, key):
 
 def sendEncrypted(client, msg):
     try:
-        byteMsg = msg.encode("utf -8")
+        byteMsg = msg.encode("utf-8")
     except:
         byteMsg = msg
+    logging("byteMsg = " + str(byteMsg))
+    logging("byteMsg length = " + str(len(byteMsg)))
+    logging("CIPHER = " + str(CIPHER))
     if CIPHER == 0:
         client.sendall(byteMsg)
     else:
+        # https://stackoverflow.com/questions/14179784/python-encrypting-with-pycrypto-aes
         # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
         #old padder = padding.PKCS7(BLOCK_SIZE).padder()
         #old padded_data = padder.update(byteMsg) + padder.finalize()
-        padded_data = pad(msg)
+        #padded_data = pad(msg)
+        length = 16 - (len(byteMsg) % 16)
+        logging("length = " + str(length))
+        byteMsg += bytes([length])*length
+        #byteMsg =byteMsg
+        logging("new byteMsg = " + byteMsg.decode())
+        logging("new byteMsg length  = " + str(len(byteMsg)))
+
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
         encryptor = CIPHER.encryptor()
-        toSend = encryptor.update(padded_data) + encryptor.finalize()
+        toSend = encryptor.update(byteMsg) + encryptor.finalize()
         client.sendall(toSend)
+        print("Encryption = " + str(toSend))
+        print(len(toSend))
+    print("debug")
 
 
 def recvEncrypted(client):
@@ -75,8 +89,9 @@ def recvEncrypted(client):
         dataRecvd = decryptor.update(message) + decryptor.finalize()
         #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
         #data = unpadder.update(dataRecvd) + unpadder.finalize()
-        data = unpad(cipher.decrypt(dataRecvd))
-        return data
+        #data = unpad(cipher.decrypt(dataRecvd))
+        dataRecvd = dataRecvd[:-dataRecvd[-1]]
+        return dataRecvd
     else:
         message = client.recv(BLOCK_SIZE).decode("utf-8")
         return message
@@ -172,7 +187,7 @@ def setCipher(cCipher, key, nonce):
         elif cCipher == 'aes256':
             # Encrypt using aes256
             BLOCK_SIZE = 256
-            CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
+            CIPHER = Cipher(algorithms.AES(SK.encode()), modes.CBC(IV.encode()), backend=backend)
         else:
             CIPHER = 0
             logging("Null cipher being used, IV and SK not needed")
@@ -261,11 +276,11 @@ if __name__ == "__main__":
 
         logging("new connection from " + str(addr[0]) + " cipher = " + cCipher)
         logging("nonce = " + nonce)
-        sendEncrypted(client, "Server: Cipher and nonce received.")
         
         logging("setting Cipher")
         setCipher(cCipher, KEY, nonce)
         logging("Block Size = " + str(BLOCK_SIZE))
+        sendEncrypted(client, "Server: Cipher and nonce received.")
 
         logging("handling client")
         clientHandler(client, KEY) 
