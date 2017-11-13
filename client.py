@@ -135,7 +135,7 @@ def sendEncrypted(serverSocket, msg):
         #old padded_data = padder.update(byteMsg) + padder.finalize()
         #padded_data = pad(byteMsg)
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
-        length = 16 - (len(byteMsg) % 16)
+        length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
         byteMsg += bytes([length])*length
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(byteMsg) + encryptor.finalize()
@@ -153,7 +153,8 @@ def recvEncrypted(serverSocket):
         #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
         dataRecvd = dataRecvd[:-dataRecvd[-1]]
         #data = unpadder.update(dataRecvd) + unpadder.finalize()
-        dataRecvd.decode("utf-8")
+        dataRecvd = dataRecvd.decode("utf-8")
+        print("dataRecvd = " + dataRecvd)
         #data = unpad(cipher.decrypt(dataRecvd))
         return dataRecvd
 
@@ -175,7 +176,7 @@ def setCipher(cCipher, key, nonce):
         elif cCipher == 'aes256':
             # Encrypt using aes256
             BLOCK_SIZE = 256
-            CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
+            CIPHER = Cipher(algorithms.AES(SK.encode()), modes.CBC(IV.encode()), backend=backend)
         else:
             CIPHER = 0
             print("Null cipher being used, IV and SK not needed")
@@ -209,7 +210,7 @@ def serverConnect(command, filename, hostname, port, cipher, key):
 
     # Get challenge from server 
     serverChallenge = recvEncrypted(serverSocket)
-    print("Server's Challenge = " + str(serverChallenge))
+    print("Server's Challenge = " + serverChallenge)
     # Authenticate key 
     toSend = authentication(serverChallenge, key)
     # Send challenge response to serverSocket

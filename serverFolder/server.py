@@ -65,7 +65,7 @@ def sendEncrypted(client, msg):
         #old padder = padding.PKCS7(BLOCK_SIZE).padder()
         #old padded_data = padder.update(byteMsg) + padder.finalize()
         #padded_data = pad(msg)
-        length = 16 - (len(byteMsg) % 16)
+        length = (BLOCK_SIZE//8) - (len(byteMsg) % (BLOCK_SIZE//8))
         logging("length = " + str(length))
         byteMsg += bytes([length])*length
         #byteMsg =byteMsg
@@ -81,19 +81,21 @@ def sendEncrypted(client, msg):
 
 
 def recvEncrypted(client):
-    if CIPHER != 0:
-        logging("cipher not equal to 0")
-        message = client.recv(BLOCK_SIZE)
-        decryptor = CIPHER.decryptor()
-        dataRecvd = decryptor.update(message) + decryptor.finalize()
-        #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
-        #data = unpadder.update(dataRecvd) + unpadder.finalize()
-        #data = unpad(cipher.decrypt(dataRecvd))
-        dataRecvd = dataRecvd[:-dataRecvd[-1]]
-        return dataRecvd
+    if CIPHER == 0:
+        data = client.recv(BLOCK_SIZE).decode("utf-8")
+        return data
     else:
-        message = client.recv(BLOCK_SIZE).decode("utf-8")
-        return message
+        data = client.recv(BLOCK_SIZE)
+        print("data length = " + str(len(data)))
+        decryptor = CIPHER.decryptor()
+        dataRecvd = decryptor.update(data) + decryptor.finalize()
+        #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
+        dataRecvd = dataRecvd[:-dataRecvd[-1]]
+        #data = unpadder.update(dataRecvd) + unpadder.finalize()
+        dataRecvd = dataRecvd.decode("utf-8")
+        print("dataRecvd = " + dataRecvd)
+        #data = unpad(cipher.decrypt(dataRecvd))
+        return dataRecvd
         
 
 # Server reads the file contents and sends it to the Client encrypted
