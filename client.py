@@ -21,6 +21,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 import os
 import random
+import binascii
 
 #GLOBAL VARIABLES
 BUFFER_SIZE = 4096
@@ -33,14 +34,24 @@ padder = lambda s: s + (BL0CK_SIZE - len(s) % BL0CK_SIZE) * chr(BL0CK_SIZE - len
 unpad = lambda s : s[0:-ord(s[-1])]
 
 def read(serverSocket, filename):
+    errorMsg = "Error: " + filename + " could not be read by server"
     try:
-        #print("trying to write to standard output")
+        print("trying to write to standard output")
         content = recvEncrypted(serverSocket)
+
         while content:
-            #print("CONTENT: " + str(content))
-            print(content)
+            print("CONTENT: " + str(content) + " of type " + str(type(content)))
+            if ".txt" not in filename:
+                print(binascii.hexlify(content))
+            else:
+                print(content.decode("utf-8"))
+            if content == errorMsg:
+                print(errorMsg)
+                serverSocket.close()
+                sys.exit()
+
             content = recvEncrypted(serverSocket)
-        #print("File successfully read")
+        print("File successfully read")
         serverSocket.close()
     except:
         print("Could not read")
@@ -53,20 +64,30 @@ def read(serverSocket, filename):
 # To write the file content to the Server the Client must read the file and pass it through the socket encrypted
 def write(serverSocket, filename):
     # Open the file and read the correct size and send to the server
+    wErrorMsg = "Error: File could not be written by server"
     try:
         with open(filename, 'rb') as rfile:
             while 1:
-                content = rfile.read(BLOCK_SIZE) #.decode().strip()
-                #print("CONTENT: " + content)
+                content = rfile.read(BUFFER_SIZE) #.decode().strip()
+                print("CONTENT: " + str(content) + " of type " + str(type(content)))
                 if not content:
-                    #print("not sending content")
+                    print("not sending content")
                     #sendEncryptedFile(serverSocket, content)
-                    sendEncrypted(serverSocket, "DONE SENDING")
+                    sendEncrypted(serverSocket, content)
                     break
-                #print("Sending content")
+                try:
+                    errorCheck = content.decode("utf-8")
+                    if errorCheck == wErrorMsg:
+                        print(wErrorMsg)
+                        rfile.close()
+                        serverSocket.close()
+                        sys.exit()
+                except:
+                    pass
+                print("Sending content")
                 #print("FUKING CONTENT " + str(content))
-                sendEncryptedFile(serverSocket, content)
-                sendEncrypted(serverSocket, "STILL SENDING")
+                sendEncrypted(serverSocket, content)
+                #sendEncrypted(serverSocket, "STILL SENDING")
             #sendEncrypted(serverSocket, "") # something to tell the server the file has ended
         rfile.close()
     except:
@@ -78,18 +99,19 @@ def write(serverSocket, filename):
 def authentication(msg, key):
     clientHash = msg + key
     response = hashlib.sha1(clientHash.encode()).hexdigest()
-    #print("My Answer = " + response)
+    print("My Answer = " + response)
     return response
     
 
 # SEND MESSAGE TO SERVER
 def sendEncrypted(serverSocket, msg):
-    
-    byteMsg = msg.encode("utf-8")
+    print("msg to send type = " + str(type(msg)))
     try:
-        byteMsg = msg.encode("utf-8")
+        byteMsg = msg.encode()
     except:
         byteMsg = msg
+
+    print("new msg to send type = " + str(type(msg)))
 
     if CIPHER == 0:
         serverSocket.sendall(byteMsg)
@@ -99,31 +121,7 @@ def sendEncrypted(serverSocket, msg):
         #old padded_data = padder.update(byteMsg) + padder.finalize()
         #padded_data = pad(byteMsg)
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
-        length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
-        byteMsg += bytes([length])*length
-        encryptor = CIPHER.encryptor()
-        toSend = encryptor.update(byteMsg) + encryptor.finalize()
-        serverSocket.sendall(toSend)
-
-# SEND MESSAGE TO SERVER
-def sendEncryptedFile(serverSocket, msg):
-    
-    byteMsg = msg
-    print("SNDFILETYPE: " + str(type(byteMsg)))
-    try:
-        byteMsg = msg
-    except:
-        byteMsg = msg
-
-    if CIPHER == 0:
-        serverSocket.sendall(byteMsg)
-    else:
-         # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
-        #old padder = padding.PKCS7(BLOCK_SIZE).padder()
-        #old padded_data = padder.update(byteMsg) + padder.finalize()
-        #padded_data = pad(byteMsg)
-        # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
-        length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
+        length = BUFFER_SIZE//8 - (len(byteMsg) % (BUFFER_SIZE//8))
         byteMsg += bytes([length])*length
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(byteMsg) + encryptor.finalize()
@@ -131,18 +129,18 @@ def sendEncryptedFile(serverSocket, msg):
 
 def recvEncrypted(serverSocket):
     if CIPHER == 0:
-        data = serverSocket.recv(BLOCK_SIZE).decode("utf-8")
+        data = serverSocket.recv(BLOCK_SIZE)
+        print("data received is of type " + str(type(data)))
         return data
     else:
         data = serverSocket.recv(BLOCK_SIZE)
-        #print("data length = " + str(len(data)))
+        print("data length = " + str(len(data)))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(data) + decryptor.finalize()
         #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
         dataRecvd = dataRecvd[:-dataRecvd[-1]]
         #data = unpadder.update(dataRecvd) + unpadder.finalize()
-        dataRecvd = dataRecvd.decode("utf-8")
-        #print("dataRecvd = " + dataRecvd)
+        dataRecvd.decode("utf-8")
         #data = unpad(cipher.decrypt(dataRecvd))
         return dataRecvd
 
@@ -152,8 +150,8 @@ def setCipher(cCipher, key, nonce):
     backend = default_backend()
     IV = hashlib.sha256(IVMsg.encode()).hexdigest()
     SK = hashlib.sha256(SKMsg.encode()).hexdigest()
-    #print("IV = " + str(IV))
-    #print("SK = " + str(SK))
+    print("IV = " + str(IV))
+    print("SK = " + str(SK))
     global BLOCK_SIZE, CIPHER
     try:
         if cCipher == 'aes128':
@@ -164,7 +162,7 @@ def setCipher(cCipher, key, nonce):
         elif cCipher == 'aes256':
             # Encrypt using aes256
             BLOCK_SIZE = 256
-            CIPHER = Cipher(algorithms.AES(SK[:32].encode()), modes.CBC(IV[:16].encode()), backend=backend)
+            CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
         else:
             CIPHER = 0
             print("Null cipher being used, IV and SK not needed")
@@ -186,6 +184,7 @@ def serverConnect(command, filename, hostname, port, cipher, key):
     global NONCE
     NONCE = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(16))
     #print("nonce = " + NONCE)
+
     # FIRST MESSAGE -----------------------------------------------------------------
     # Send to server for authentication. Only send CIPHER and NONCE
     setCipher(cipher, key, NONCE)
@@ -193,22 +192,20 @@ def serverConnect(command, filename, hostname, port, cipher, key):
     serverSocket.sendall(initMessage.encode("utf-8"))
 
     # Server should response with ack when cipher and nonce are received
-    ack = recvEncrypted(serverSocket)
-    #print(ack)
+    ack = recvEncrypted(serverSocket).decode("utf-8")
+    print(ack)
 
     # Get challenge from server 
-    serverChallenge = recvEncrypted(serverSocket)
-    #print("Server's Challenge = " + serverChallenge)
+    serverChallenge = recvEncrypted(serverSocket).decode("utf-8")
+    print("Server's Challenge = " + str(serverChallenge))
     # Authenticate key 
     toSend = authentication(serverChallenge, key)
     # Send challenge response to serverSocket
     sendEncrypted(serverSocket, toSend)
     # Get challenge result from server 
-    keyResult = recvEncrypted(serverSocket)
+    keyResult = recvEncrypted(serverSocket).decode("utf-8")
     if keyResult != "Server: Correct Key":
         print(keyResult)
-    # Key check
-    #print(keyResult)
 
     # REQUEST ------------------------------------------------------------------------
     # Start sending stuff
@@ -217,7 +214,7 @@ def serverConnect(command, filename, hostname, port, cipher, key):
     sendEncrypted(serverSocket, requestAction)
 
     # Get server response True/False (Server: I can do this action/I cannot do this action)
-    serverResponse = recvEncrypted(serverSocket)
+    serverResponse = recvEncrypted(serverSocket).decode("utf-8")
 
     # DATA EXCHANGE ------------------------------------------------------------------
     #print(serverResponse)
@@ -229,6 +226,8 @@ def serverConnect(command, filename, hostname, port, cipher, key):
         elif command == 'write':
             #print("Starting write")
             write(serverSocket, filename)
+    else:
+        print(serverResponse)
 
 
     # FINAL RESULT -------------------------------------------------------------------

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 IV = 496b1279cf93e61fe99fbd1c880f6caf37aa1cf5d5b35733d0b88d1799484634
 SK = c490a8f262bcb550e4c234969aed805c846d0bf5fc4f4e8dec3bb298cb8cc473
 Traceback (most recent call last):
@@ -11,7 +12,34 @@ Traceback (most recent call last):
     "Only 128, 192, and 256 bit keys are allowed for this AES mode"
 ValueError: Only 128, 192, and 256 bit keys are allowed for this AES mode
 
+=======
+Key = mysecretkey
+DEBUG 
+HOSTNAME: localhost
+PORT: 1230
+nonce = o0a5s48zi46tqjab
+IV = 6f29e9419a8f0d9803c238c9375a490aab2739021b07b1acd30a35d5254290fc
+SK = 7abee4c7cd299be7247745b80975a6542703391fc0cb219458a5f1eaa2d5d907
+Null cipher being used, IV and SK not needed
+Server: Cipher and nonce received.
+Server's Challenge = md819131b8oysznd
+My Answer = f568f7f1342a3d29960e4f532172fbb429f4ad99
+Server: Correct Key! Send me your request
+Sending request
+>>>>>>> parent of 1aa9fd9... yes works
 Server: Valid Operation
 a mo thasd fasd asdfas; kf4weq ae0fi asdfkasd
+<<<<<<< HEAD
 File successfully read
 OK
+=======
+Could not read
+Traceback (most recent call last):
+  File "client.py", line 67, in read
+    content = recvEncrypted(serverSocket)
+  File "client.py", line 140, in recvEncrypted
+    data = serverSocket.recv(BLOCK_SIZE).decode("utf-8")
+KeyboardInterrupt
+
+SUCCESS MOTHAFUCKAAAAAAAAAA WOOOOOOOO
+>>>>>>> parent of 1aa9fd9... yes works
