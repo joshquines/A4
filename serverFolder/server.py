@@ -22,6 +22,10 @@ BUFFER_SIZE = 4096
 CIPHER = 0
 BLOCK_SIZE = 128
 
+# https://gist.github.com/crmccreary/5610068
+padder = lambda s: s + (BL0CK_SIZE - len(s) % BL0CK_SIZE) * chr(BL0CK_SIZE - len(s) % BL0CK_SIZE) 
+unpad = lambda s : s[0:-ord(s[-1])]
+
 
 # Authentication
     # server → client: random challenge
@@ -54,8 +58,9 @@ def sendEncrypted(client, msg):
         client.sendall(byteMsg)
     else:
         # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
-        padder = padding.PKCS7(BLOCK_SIZE).padder()
-        padded_data = padder.update(byteMsg) + padder.finalize()
+        #old padder = padding.PKCS7(BLOCK_SIZE).padder()
+        #old padded_data = padder.update(byteMsg) + padder.finalize()
+        padded_data = pad(msg)
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(padded_data) + encryptor.finalize()
@@ -68,8 +73,9 @@ def recvEncrypted(client):
         message = client.recv(BLOCK_SIZE)
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(message) + decryptor.finalize()
-        unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
-        data = unpadder.update(dataRecvd) + unpadder.finalize()
+        #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
+        #data = unpadder.update(dataRecvd) + unpadder.finalize()
+        data = unpad(cipher.decrypt(dataRecvd))
         return data
     else:
         message = client.recv(BUFFER_SIZE).decode("utf-8")
@@ -139,25 +145,30 @@ def setCipher(cCipher, key, nonce):
     logging("IV = " + str(IV))
     logging("SK = " + str(SK))
     global BLOCK_SIZE, CIPHER
-    if cCipher == 'aes128':
-        # Encrypt using aes128
-        BLOCK_SIZE = 128
-        CIPHER = Cipher(algorithms.AES(SK[:16].encode()), modes.CBC(IV[:16].encode()), backend=backend)
+    try:
+        if cCipher == 'aes128':
+            # Encrypt using aes128
+            BLOCK_SIZE = 128
+            CIPHER = Cipher(algorithms.AES(SK[:16].encode()), modes.CBC(IV[:16].encode()), backend=backend)
 
-    elif cCipher == 'aes256':
-        # Encrypt using aes256
-        BLOCK_SIZE = 256
-        CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
-    else:
-        CIPHER = 0
-        logging("Null cipher being used, IV and SK not needed")
+        elif cCipher == 'aes256':
+            # Encrypt using aes256
+            BLOCK_SIZE = 256
+            CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
+        else:
+            CIPHER = 0
+            logging("Null cipher being used, IV and SK not needed")
+    except:
+        tb = traceback.format_exc()
+        print (tb)
+
 
 
 """Log client activity to standard output"""
 def logging(msg):
     # get local time
     print(time.strftime("%a %b %d %H:%M:%S") + ": " + msg)
-        
+    
 
 # Request
     # client → server: operation, filename

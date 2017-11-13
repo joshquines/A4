@@ -28,6 +28,9 @@ BLOCK_SIZE = 128
 CIPHER = 0
 cipherType = ['aes256','aes128','null']
 
+# https://gist.github.com/crmccreary/5610068
+padder = lambda s: s + (BL0CK_SIZE - len(s) % BL0CK_SIZE) * chr(BL0CK_SIZE - len(s) % BL0CK_SIZE) 
+unpad = lambda s : s[0:-ord(s[-1])]
 
 def read(serverSocket, filename):
     try:
@@ -98,7 +101,6 @@ def authentication(msg, key):
     
 
 # SEND MESSAGE TO SERVER
-
 def sendEncrypted(serverSocket, msg):
     """
     byteMsg = msg.encode("utf-8")
@@ -111,6 +113,7 @@ def sendEncrypted(serverSocket, msg):
         toSend = encrypt.update(byteMsg) + encrypt.finalize()
         serverSocket.sendall(toSend).encode()
     """
+    
     try:
         byteMsg = msg.encode("utf-8")
     except:
@@ -120,8 +123,9 @@ def sendEncrypted(serverSocket, msg):
         serverSocket.sendall(byteMsg)
     else:
          # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
-        padder = padding.PKCS7(BLOCK_SIZE).padder()
-        padded_data = padder.update(byteMsg) + padder.finalize()
+        #old padder = padding.PKCS7(BLOCK_SIZE).padder()
+        #old padded_data = padder.update(byteMsg) + padder.finalize()
+        padded_data = pad(byteMsg)
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(padded_data) + encryptor.finalize()
@@ -136,8 +140,11 @@ def recvEncrypted(serverSocket):
         challenge = serverSocket.recv(BLOCK_SIZE)
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(challenge) + decryptor.finalize()
-        unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
-        data = unpadder.update(dataRecvd) + unpadder.finalize()
+        #old unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
+
+        #old data = unpadder.update(dataRecvd) + unpadder.finalize()
+
+        data = unpad(cipher.decrypt(dataRecvd))
         return data
 
 def setCipher(cCipher, key, nonce):
@@ -149,19 +156,22 @@ def setCipher(cCipher, key, nonce):
     print("IV = " + str(IV))
     print("SK = " + str(SK))
     global BLOCK_SIZE, CIPHER
-    if cCipher == 'aes128':
-        # Encrypt using aes128
-        BLOCK_SIZE = 128
-        CIPHER = Cipher(algorithms.AES(SK[:16].encode()), modes.CBC(IV[:16].encode()), backend=backend)
+    try:
+        if cCipher == 'aes128':
+            # Encrypt using aes128
+            BLOCK_SIZE = 128
+            CIPHER = Cipher(algorithms.AES(SK[:16].encode()), modes.CBC(IV[:16].encode()), backend=backend)
 
-    elif cCipher == 'aes256':
-        # Encrypt using aes256
-        BLOCK_SIZE = 256
-        CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
-    else:
-        CIPHER = 0
-        print("Null cipher being used, IV and SK not needed")
-
+        elif cCipher == 'aes256':
+            # Encrypt using aes256
+            BLOCK_SIZE = 256
+            CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
+        else:
+            CIPHER = 0
+            print("Null cipher being used, IV and SK not needed")
+    except:
+        tb = traceback.format_exc()
+        print (tb)
 
 
 
