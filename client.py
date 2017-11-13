@@ -54,9 +54,9 @@ def read(serverSocket, filename):
 def write(serverSocket, filename):
     # Open the file and read the correct size and send to the server
     try:
-        with open(filename, 'r+') as rfile:
+        with open(filename, 'rb') as rfile:
             while 1:
-                content = rfile.read(BLOCK_SIZE)
+                content = rfile.read(BLOCK_SIZE).decode("utf-8")
                 #print("CONTENT: " + content)
                 if not content:
                     #print("not sending content")

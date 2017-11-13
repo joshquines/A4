@@ -111,9 +111,9 @@ def read(client, filename):
     # Open the file and read the correct size and send to the client
     try:
         #logging("Trying to read " + filename)
-        with open(filename, 'r+') as rfile:
+        with open(filename, 'rb') as rfile:
             while 1:
-                content = rfile.read(BLOCK_SIZE)
+                content = rfile.read(BLOCK_SIZE).decode("utf-8")
                 #logging("CONTENT: " + content)
                 if not content:
                     #logging("not sending content")
@@ -131,7 +131,7 @@ def read(client, filename):
 
 def write(client, filename):
     try:
-        with open(filename, 'w+') as wfile:
+        with open(filename, 'wb') as wfile:
             #logging("trying to write to " + filename)
             while 1:
                 content = recvEncrypted(client)
