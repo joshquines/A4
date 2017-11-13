@@ -25,11 +25,6 @@ BLOCK_SIZE = 128
 IVMsg = None 
 SKMsg = None 
 
-# https://gist.github.com/crmccreary/5610068
-padder = lambda s: s + (BL0CK_SIZE - len(s) % BL0CK_SIZE) * chr(BL0CK_SIZE - len(s) % BL0CK_SIZE) 
-unpad = lambda s : s[0:-ord(s[-1])]
-
-
 # Authentication
     # server → client: random challenge
     # client → server: compute and send back a reply that can only be computed if secret key is known
@@ -94,6 +89,7 @@ def recvEncrypted(client):
         dataRecvd = decryptor.update(data) + decryptor.finalize()
         #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
         dataRecvd = dataRecvd[:-dataRecvd[-1]]
+        #ataRecvd = dataRecvd[:len(dataRecvd)-1] 
         #data = unpadder.update(dataRecvd) + unpadder.finalize()
         dataRecvd = dataRecvd.decode("utf-8")
         #print("dataRecvd = " + dataRecvd)
@@ -172,6 +168,7 @@ def write(client, filename):
                 #logging("Writing content")
                 wfile.write(content)
                 content = recvEncryptedFile(client)
+                break
 
             #logging("File successfully written")
         print("AYYYY BISSHHH")
