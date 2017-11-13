@@ -26,11 +26,6 @@ BLOCK_SIZE = 128
 IVMsg = None 
 SKMsg = None 
 
-# https://gist.github.com/crmccreary/5610068
-padder = lambda s: s + (BL0CK_SIZE - len(s) % BL0CK_SIZE) * chr(BL0CK_SIZE - len(s) % BL0CK_SIZE) 
-unpad = lambda s : s[0:-ord(s[-1])]
-
-
 # Authentication
     # server → client: random challenge
     # client → server: compute and send back a reply that can only be computed if secret key is known
