@@ -1,0 +1,27 @@
+Key = mysecretkey
+DEBUG 
+HOSTNAME: localhost
+PORT: 1230
+nonce = o0a5s48zi46tqjab
+IV = 6f29e9419a8f0d9803c238c9375a490aab2739021b07b1acd30a35d5254290fc
+SK = 7abee4c7cd299be7247745b80975a6542703391fc0cb219458a5f1eaa2d5d907
+Null cipher being used, IV and SK not needed
+Server: Cipher and nonce received.
+Server's Challenge = md819131b8oysznd
+My Answer = f568f7f1342a3d29960e4f532172fbb429f4ad99
+Server: Correct Key! Send me your request
+Sending request
+Server: Valid Operation
+Starting read
+trying to write to standard output
+CONTENT: a mo thasd fasd asdfas; kf4weq ae0fi asdfkasd
+a mo thasd fasd asdfas; kf4weq ae0fi asdfkasd
+Could not read
+Traceback (most recent call last):
+  File "client.py", line 67, in read
+    content = recvEncrypted(serverSocket)
+  File "client.py", line 140, in recvEncrypted
+    data = serverSocket.recv(BLOCK_SIZE).decode("utf-8")
+KeyboardInterrupt
+
+SUCCESS MOTHAFUCKAAAAAAAAAA WOOOOOOOO

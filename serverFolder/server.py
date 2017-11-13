@@ -78,11 +78,11 @@ def recvEncrypted(client):
         data = unpad(cipher.decrypt(dataRecvd))
         return data
     else:
-        message = client.recv(BUFFER_SIZE).decode("utf-8")
+        message = client.recv(BLOCK_SIZE).decode("utf-8")
         return message
         
 
-
+# Server reads the file contents and sends it to the Client encrypted
 def read(client, filename):
     # Check if filename is a file
     if not os.path.isfile(filename):
@@ -93,6 +93,24 @@ def read(client, filename):
     logging("Reading from file: " + filename)
 
     # Open the file and read the correct size and send to the client
+    try:
+        logging("Trying to read " + filename)
+        with open(filename, 'r+') as rfile:
+            while 1:
+                content = rfile.read(BLOCK_SIZE)
+                logging("CONTENT: " + content)
+                if not content:
+                    logging("not sending content")
+                    sendEncrypted(client, content)
+                    break
+                logging("Sending content")
+                sendEncrypted(client, content)
+            #sendEncrypted(serverSocket, "") # something to tell the server the file has ended
+        rfile.close()
+    except:
+        tb = traceback.format_exc()
+        print (tb)
+    """
     try:
         logging("Trying to read " + filename)
         with open(filename, 'r+') as rfile:
@@ -110,7 +128,7 @@ def read(client, filename):
         sendEncrypted(client, "Error: File could not be opened")
         tb = traceback.format_exc()
         print (tb)
-
+    """
 
 def write(client, filename):
     try:
@@ -125,8 +143,8 @@ def write(client, filename):
                 logging("Writing content")
                 wfile.write(content)
             logging("File successfully written")
-            sendEncrypted(client, "OK")
         wfile.close()
+        client.close()
     except:
         sendEncrypted(client, "Error: File could not be opened")
         logging("Could not open file to write")

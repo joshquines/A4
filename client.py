@@ -33,6 +33,7 @@ padder = lambda s: s + (BL0CK_SIZE - len(s) % BL0CK_SIZE) * chr(BL0CK_SIZE - len
 unpad = lambda s : s[0:-ord(s[-1])]
 
 def read(serverSocket, filename):
+    """
     try:
         with open(filename, 'w+') as wfile:
             while 1:
@@ -40,23 +41,6 @@ def read(serverSocket, filename):
                 wfile.write(content)
                 print("CONTENT: " + str(content))
                 break
-                """
-                while content != "File successfully read":
-                    print("printing")
-                    wfile.write(content)
-                    
-                if not content:
-                    wfile.write(content)
-                    break
-                if content == 'OK': # Something to tell the server the file has ended
-                    wfile.write(content)
-                    break
-
-                if content == "Error: Server could not open file":
-                    print(content)
-                    break
-                #wfile.write(content)
-                """
             #sendEncrypted(serverSocket, "OK")
             resp = recvEncrypted(serverSocket)
             print("DEBUG: SERVER RESPONSE = " + resp)
@@ -64,15 +48,38 @@ def read(serverSocket, filename):
     except:
         serverSocket.close()
         return
-
-def write(serverSocket, filename):
-    # Check if filename is a file
-    if not os.path.isfile(filename):
-        print("File does not exist")
-        sendEncrypted(serverSocket, "Error: " + filename + " could not be read")
+    
+    print("trying to read from Server")
+    while 1:
+        print("reading content")
+        content = recvEncrypted(serverSocket)
+        print("Content = " + content)
+        if not content:
+            print("file has ended")
+            break
+        print(content)
+    print("File successfully read")
+    sendEncrypted(serverSocket, "Read Complete")
+    """
+    try:
+        print("trying to write to standard output")
+        content = recvEncrypted(serverSocket)
+        while content:
+            print("CONTENT: " + str(content))
+            print(content)
+            content = recvEncrypted(serverSocket)
+        print("File successfully read")
+        serverSocket.close()
+    except:
+        print("Could not read")
+        tb = traceback.format_exc()
+        print (tb)
         serverSocket.close()
         return
 
+
+# To write the file content to the Server the Client must read the file and pass it through the socket encrypted
+def write(serverSocket, filename):
     # Open the file and read the correct size and send to the server
     try:
         with open(filename, 'r+') as rfile:
@@ -134,8 +141,8 @@ def sendEncrypted(serverSocket, msg):
 def recvEncrypted(serverSocket):
 
     if CIPHER == 0:
-        challenge = serverSocket.recv(BLOCK_SIZE).decode("utf-8")
-        return challenge
+        data = serverSocket.recv(BLOCK_SIZE).decode("utf-8")
+        return data
     else:
         challenge = serverSocket.recv(BLOCK_SIZE)
         decryptor = CIPHER.decryptor()
