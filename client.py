@@ -56,14 +56,17 @@ def write(serverSocket, filename):
     try:
         with open(filename, 'rb') as rfile:
             while 1:
-                content = rfile.read(BLOCK_SIZE).decode("utf-8")
+                content = rfile.read(BLOCK_SIZE) #.decode().strip()
                 #print("CONTENT: " + content)
                 if not content:
                     #print("not sending content")
-                    sendEncrypted(serverSocket, content)
+                    #sendEncryptedFile(serverSocket, content)
+                    sendEncrypted(serverSocket, "DONE SENDING")
                     break
                 #print("Sending content")
-                sendEncrypted(serverSocket, content)
+                #print("FUKING CONTENT " + str(content))
+                sendEncryptedFile(serverSocket, content)
+                sendEncrypted(serverSocket, "STILL SENDING")
             #sendEncrypted(serverSocket, "") # something to tell the server the file has ended
         rfile.close()
     except:
@@ -85,6 +88,30 @@ def sendEncrypted(serverSocket, msg):
     byteMsg = msg.encode("utf-8")
     try:
         byteMsg = msg.encode("utf-8")
+    except:
+        byteMsg = msg
+
+    if CIPHER == 0:
+        serverSocket.sendall(byteMsg)
+    else:
+         # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
+        #old padder = padding.PKCS7(BLOCK_SIZE).padder()
+        #old padded_data = padder.update(byteMsg) + padder.finalize()
+        #padded_data = pad(byteMsg)
+        # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
+        length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
+        byteMsg += bytes([length])*length
+        encryptor = CIPHER.encryptor()
+        toSend = encryptor.update(byteMsg) + encryptor.finalize()
+        serverSocket.sendall(toSend)
+
+# SEND MESSAGE TO SERVER
+def sendEncryptedFile(serverSocket, msg):
+    
+    byteMsg = msg
+    print("SNDFILETYPE: " + str(type(byteMsg)))
+    try:
+        byteMsg = msg
     except:
         byteMsg = msg
 
