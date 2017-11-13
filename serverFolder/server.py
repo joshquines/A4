@@ -144,10 +144,10 @@ def write(client, filename):
                     logging("file has ended")
                     break
                 logging("Writing content in " + str(type(content)))
-                if ".txt" not in filename:
-                    wfile.write(binascii.hexlify(content))
-                else:
-                    wfile.write(content)
+                #if ".txt" not in filename:
+                #    wfile.write(content)
+                #else:
+                wfile.write(content)
                 content = recvEncrypted(client)
 
             logging("File successfully written")
