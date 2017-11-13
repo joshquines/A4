@@ -62,45 +62,18 @@ def read(serverSocket, filename):
         tb = traceback.format_exc()
         print (tb)
         return
-""" 
-    errorMsg = "Error: " + filename + " could not be read by server"
-    try:
-        print("trying to write to standard output")
-        content = recvEncrypted(serverSocket)
-
-        while content:
-            print("CONTENT: " + str(content) + " of type " + str(type(content)))
-            if ".txt" not in filename:
-                #sys.stdout.buffer.write(content)
-                os.write(1, content)
-            else:
-                print(content.decode("utf-8"), end="")
-
-            if content == errorMsg:
-                print(errorMsg)
-                serverSocket.close()
-                sys.exit()
-
-            content = recvEncrypted(serverSocket)
-        print("File successfully read")
-        serverSocket.close()
-    except:
-        print("Could not read")
-        tb = traceback.format_exc()
-        print (tb)
-        serverSocket.close()
-        return
-"""
 
 # To write the file content to the Server the Client must read the file and pass it through the socket encrypted
 def write(serverSocket, filename):
     # Open the file and read the correct size and send to the server
     wErrorMsg = "Error: File could not be written by server"
+    print("Starting write operation")
     try:
         with open(filename, 'rb') as rfile:
             while 1:
-                content = rfile.read(BUFFER_SIZE) #.decode().strip()
+                content = rfile.read(BLOCK_SIZE) #.decode().strip()
                 print("CONTENT: " + str(content) + " of type " + str(type(content)))
+                print("content length = " + str(len(content)))
                 if not content:
                     print("not sending content")
                     #sendEncryptedFile(serverSocket, content)
@@ -152,28 +125,39 @@ def sendEncrypted(serverSocket, msg):
         #old padded_data = padder.update(byteMsg) + padder.finalize()
         #padded_data = pad(byteMsg)
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
-        length = BUFFER_SIZE//8 - (len(byteMsg) % (BUFFER_SIZE//8))
-        byteMsg += bytes([length])*length
+        length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
+        #if length == BLOCK_SIZE//8:
+        #    length = 0
+        print("pad length = " + str(length))
+        pad = bytes([length])*length
+        print("byteMsg = " + str(byteMsg))
+        print("pad = " + str(pad))
+        byteMsg = byteMsg + pad
+        print("padded msg = " + str(byteMsg))
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(byteMsg) + encryptor.finalize()
+        print("encrypted = " + str(toSend))
         serverSocket.sendall(toSend)
+        print("Sent")
 
 def recvEncrypted(serverSocket):
-    if CIPHER == 0:
-        data = serverSocket.recv(BLOCK_SIZE)
-        #print("data received is of type " + str(type(data)))
-        return data
-    else:
-        data = serverSocket.recv(BLOCK_SIZE)
-        #print("data length = " + str(len(data)))
+    if CIPHER != 0:
+        print("cipher not equal to 0")
+        message = serverSocket.recv(BUFFER_SIZE)
+        print("received msg = " + str(message))
         decryptor = CIPHER.decryptor()
-        dataRecvd = decryptor.update(data) + decryptor.finalize()
+        dataRecvd = decryptor.update(message) + decryptor.finalize()
         #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
-        dataRecvd = dataRecvd[:-dataRecvd[-1]]
         #data = unpadder.update(dataRecvd) + unpadder.finalize()
-        dataRecvd.decode("utf-8")
         #data = unpad(cipher.decrypt(dataRecvd))
+        print("decrypted = " + str(dataRecvd))
+        dataRecvd = dataRecvd[:-dataRecvd[-1]]
+        print("padding removed = " + str(dataRecvd))
+        print("Data received = " + str(dataRecvd)+ " of type " + str(type(dataRecvd)))
         return dataRecvd
+    else:
+        message = serverSocket.recv(BUFFER_SIZE)
+        return message
 
 def setCipher(cCipher, key, nonce):
     IVMsg = key + nonce + "IV"

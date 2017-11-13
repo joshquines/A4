@@ -83,16 +83,19 @@ def recvEncrypted(client):
     if CIPHER != 0:
         logging("cipher not equal to 0")
         message = client.recv(BUFFER_SIZE)
+        logging("received msg = " + str(message))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(message) + decryptor.finalize()
         #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
         #data = unpadder.update(dataRecvd) + unpadder.finalize()
         #data = unpad(cipher.decrypt(dataRecvd))
+        logging("decrypted = " + str(dataRecvd))
         dataRecvd = dataRecvd[:-dataRecvd[-1]]
+        logging("padding removed = " + str(dataRecvd))
         logging("Data received = " + str(dataRecvd)+ " of type " + str(type(dataRecvd)))
         return dataRecvd
     else:
-        message = client.recv(BLOCK_SIZE)
+        message = client.recv(BUFFER_SIZE)
         return message
         
 
@@ -153,7 +156,7 @@ def write(client, filename):
             logging("File successfully written")
         #print("AYYYY BISSHHH")
         wfile.close()
-        client.close()
+        #client.close()
     except:
         sendEncrypted(client, "Error: File could not be written by server")
         logging("Error: File could not be written by server")
