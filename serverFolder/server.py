@@ -35,14 +35,14 @@ unpad = lambda s : s[0:-ord(s[-1])]
 def authentication(client, key):
     # https://codereview.stackexchange.com/questions/47529/creating-a-string-of-random-characters
     message = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(16))
-    logging("Message = " + message)
+    #logging("Message = " + message)
     sendEncrypted(client, message)
     # random challenge is for the client to send back SHA1(msg|key)
     hashMsg = message + key
     answer = hashlib.sha1(hashMsg.encode()).hexdigest()
-    logging("H(msg|key) = " + answer)
+    #logging("H(msg|key) = " + answer)
     clientAnswer = recvEncrypted(client)
-    logging("Client's Answer = " + str(clientAnswer))
+    #logging("Client's Answer = " + str(clientAnswer))
     if answer != clientAnswer: 
         return False
     else:
@@ -54,9 +54,9 @@ def sendEncrypted(client, msg):
         byteMsg = msg.encode("utf-8")
     except:
         byteMsg = msg
-    logging("byteMsg = " + str(byteMsg))
-    logging("byteMsg length = " + str(len(byteMsg)))
-    logging("CIPHER = " + str(CIPHER))
+    #logging("byteMsg = " + str(byteMsg))
+    #logging("byteMsg length = " + str(len(byteMsg)))
+    #logging("CIPHER = " + str(CIPHER))
     if CIPHER == 0:
         client.sendall(byteMsg)
     else:
@@ -66,18 +66,18 @@ def sendEncrypted(client, msg):
         #old padded_data = padder.update(byteMsg) + padder.finalize()
         #padded_data = pad(msg)
         length = (BLOCK_SIZE//8) - (len(byteMsg) % (BLOCK_SIZE//8))
-        logging("length = " + str(length))
+        #logging("length = " + str(length))
         byteMsg += bytes([length])*length
         #byteMsg =byteMsg
-        logging("new byteMsg = " + byteMsg.decode())
-        logging("new byteMsg length  = " + str(len(byteMsg)))
+        #logging("new byteMsg = " + byteMsg.decode())
+        #logging("new byteMsg length  = " + str(len(byteMsg)))
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(byteMsg) + encryptor.finalize()
         client.sendall(toSend)
-        print("Encryption = " + str(toSend))
-        print(len(toSend))
-    print("debug")
+        #print("Encryption = " + str(toSend))
+        #print(len(toSend))
+    #print("debug")
 
 
 def recvEncrypted(client):
@@ -86,14 +86,14 @@ def recvEncrypted(client):
         return data
     else:
         data = client.recv(BLOCK_SIZE)
-        print("data length = " + str(len(data)))
+        #print("data length = " + str(len(data)))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(data) + decryptor.finalize()
         #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
         dataRecvd = dataRecvd[:-dataRecvd[-1]]
         #data = unpadder.update(dataRecvd) + unpadder.finalize()
         dataRecvd = dataRecvd.decode("utf-8")
-        print("dataRecvd = " + dataRecvd)
+        #print("dataRecvd = " + dataRecvd)
         #data = unpad(cipher.decrypt(dataRecvd))
         return dataRecvd
         
@@ -106,66 +106,47 @@ def read(client, filename):
         sendEncrypted(client, "Error: " + filename + " could not be read by server")
         client.close()
         return
-    logging("Reading from file: " + filename)
+    #logging("Reading from file: " + filename)
 
     # Open the file and read the correct size and send to the client
     try:
-        logging("Trying to read " + filename)
+        #logging("Trying to read " + filename)
         with open(filename, 'r+') as rfile:
             while 1:
                 content = rfile.read(BLOCK_SIZE)
-                logging("CONTENT: " + content)
+                #logging("CONTENT: " + content)
                 if not content:
-                    logging("not sending content")
+                    #logging("not sending content")
                     sendEncrypted(client, content)
                     break
-                logging("Sending content")
+                #logging("Sending content")
                 sendEncrypted(client, content)
             #sendEncrypted(serverSocket, "") # something to tell the server the file has ended
         rfile.close()
     except:
-        tb = traceback.format_exc()
-        print (tb)
-    """
-    try:
-        logging("Trying to read " + filename)
-        with open(filename, 'r+') as rfile:
-            content = rfile.read(BLOCK_SIZE-1)
-            #sendEncrypted(client, content)
-            while content:
-                sendEncrypted(client, content)
-                content = rfile.read(BLOCK_SIZE-1)
-                print("DEBUG: PRINTING CONTENT")
-            logging("File successfully read")
-            sendEncrypted(client, "end of fukin file fam") # something to tell the client the file has ended
-        rfile.close()
-    except:
-        logging("Could not open file to read")
-        sendEncrypted(client, "Error: File could not be opened")
-        tb = traceback.format_exc()
-        print (tb)
-    """
+        sendEncrypted(client, "Error: File could not be read by server")
+        logging("Error: File could not be read by server")
+        client.close()
+        return
 
 def write(client, filename):
     try:
         with open(filename, 'w+') as wfile:
-            logging("trying to write to " + filename)
+            #logging("trying to write to " + filename)
             while 1:
                 content = recvEncrypted(client)
-                logging("CONTENT: " + str(content))
+                #logging("CONTENT: " + str(content))
                 if not content:
-                    print("file has ended")
+                    logging("file has ended")
                     break
-                logging("Writing content")
+                #logging("Writing content")
                 wfile.write(content)
-            logging("File successfully written")
+            #logging("File successfully written")
         wfile.close()
         client.close()
     except:
-        sendEncrypted(client, "Error: File could not be opened")
-        logging("Could not open file to write")
-        tb = traceback.format_exc()
-        print (tb)
+        sendEncrypted(client, "Error: File could not be written by server")
+        logging("Error: File could not be written by server")
         client.close()
         return
 
@@ -188,7 +169,7 @@ def setCipher(cCipher, key, nonce):
         elif cCipher == 'aes256':
             # Encrypt using aes256
             BLOCK_SIZE = 256
-            CIPHER = Cipher(algorithms.AES(SK.encode()), modes.CBC(IV.encode()), backend=backend)
+            CIPHER = Cipher(algorithms.AES(SK[:32].encode()), modes.CBC(IV[:16].encode()), backend=backend)
         else:
             CIPHER = 0
             logging("Null cipher being used, IV and SK not needed")
@@ -219,12 +200,12 @@ def clientHandler(client, key):
     # Authenticate Client's key
     if not authentication(client, key):
         logging("Error: wrong key")
-        sendEncrypted(client, "Server: Incorrect Key Used")
+        sendEncrypted(client, "Error: Incorrect Key Used")
         client.close()
         return
     else:
         logging("Correct key used")
-        sendEncrypted(client, "Server: Correct Key! Send me your request")
+        sendEncrypted(client, "Server: Correct Key")
 
     # Client will send as operation;filename
     request = recvEncrypted(client).split(";")
@@ -243,6 +224,7 @@ def clientHandler(client, key):
         write(client, filename)
     else:
         sendEncrypted(client, "Server: Unknown Operation. I can only read and write.")
+        logging("Error: wrong command line arguments")
         client.close()
 
 
@@ -270,24 +252,24 @@ if __name__ == "__main__":
         # First message in the clear
         # client → server: cipher, nonce
         cipherNonceMsg = client.recv(BUFFER_SIZE).decode("utf-8").split(";")
-        logging("cipher = " + cipherNonceMsg[0])
-        logging("nonce = " + cipherNonceMsg[1] )
+        #logging("cipher = " + cipherNonceMsg[0])
+        #logging("nonce = " + cipherNonceMsg[1] )
         cCipher = cipherNonceMsg[0]
         nonce = cipherNonceMsg[1]
 
         logging("new connection from " + str(addr[0]) + " cipher = " + cCipher)
-        logging("nonce = " + nonce)
+        #logging("nonce = " + nonce)
         
-        logging("setting Cipher")
+        #logging("setting Cipher")
         setCipher(cCipher, KEY, nonce)
-        logging("Block Size = " + str(BLOCK_SIZE))
+        #logging("Block Size = " + str(BLOCK_SIZE))
         sendEncrypted(client, "Server: Cipher and nonce received.")
 
-        logging("handling client")
+        #logging("handling client")
         clientHandler(client, KEY) 
         # Final Success
         # server → client: final success
-        logging("End of main")
+        logging("status: Success")
 
         client.close()
 

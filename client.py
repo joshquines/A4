@@ -33,42 +33,14 @@ padder = lambda s: s + (BL0CK_SIZE - len(s) % BL0CK_SIZE) * chr(BL0CK_SIZE - len
 unpad = lambda s : s[0:-ord(s[-1])]
 
 def read(serverSocket, filename):
-    """
     try:
-        with open(filename, 'w+') as wfile:
-            while 1:
-                content = recvEncrypted(serverSocket)
-                wfile.write(content)
-                print("CONTENT: " + str(content))
-                break
-            #sendEncrypted(serverSocket, "OK")
-            resp = recvEncrypted(serverSocket)
-            print("DEBUG: SERVER RESPONSE = " + resp)
-        wfile.close()
-    except:
-        serverSocket.close()
-        return
-    
-    print("trying to read from Server")
-    while 1:
-        print("reading content")
-        content = recvEncrypted(serverSocket)
-        print("Content = " + content)
-        if not content:
-            print("file has ended")
-            break
-        print(content)
-    print("File successfully read")
-    sendEncrypted(serverSocket, "Read Complete")
-    """
-    try:
-        print("trying to write to standard output")
+        #print("trying to write to standard output")
         content = recvEncrypted(serverSocket)
         while content:
-            print("CONTENT: " + str(content))
+            #print("CONTENT: " + str(content))
             print(content)
             content = recvEncrypted(serverSocket)
-        print("File successfully read")
+        #print("File successfully read")
         serverSocket.close()
     except:
         print("Could not read")
@@ -85,12 +57,12 @@ def write(serverSocket, filename):
         with open(filename, 'r+') as rfile:
             while 1:
                 content = rfile.read(BLOCK_SIZE)
-                print("CONTENT: " + content)
+                #print("CONTENT: " + content)
                 if not content:
-                    print("not sending content")
+                    #print("not sending content")
                     sendEncrypted(serverSocket, content)
                     break
-                print("Sending content")
+                #print("Sending content")
                 sendEncrypted(serverSocket, content)
             #sendEncrypted(serverSocket, "") # something to tell the server the file has ended
         rfile.close()
@@ -103,7 +75,7 @@ def write(serverSocket, filename):
 def authentication(msg, key):
     clientHash = msg + key
     response = hashlib.sha1(clientHash.encode()).hexdigest()
-    print("My Answer = " + response)
+    #print("My Answer = " + response)
     return response
     
 
@@ -111,17 +83,6 @@ def authentication(msg, key):
 def sendEncrypted(serverSocket, msg):
     
     byteMsg = msg.encode("utf-8")
-    """
-    padder = padding.PKCS7(BLOCK_SIZE).padder()
-    padded_data = padder.update(byteMsg) + padder.finalize()
-    if CIPHER == 0:
-        serverSocket.sendall(msg).encode()
-    else:
-        encrypt = CIPHER.encryptor()
-        toSend = encrypt.update(byteMsg) + encrypt.finalize()
-        serverSocket.sendall(toSend).encode()
-    """
-    
     try:
         byteMsg = msg.encode("utf-8")
     except:
@@ -147,14 +108,14 @@ def recvEncrypted(serverSocket):
         return data
     else:
         data = serverSocket.recv(BLOCK_SIZE)
-        print("data length = " + str(len(data)))
+        #print("data length = " + str(len(data)))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(data) + decryptor.finalize()
         #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
         dataRecvd = dataRecvd[:-dataRecvd[-1]]
         #data = unpadder.update(dataRecvd) + unpadder.finalize()
         dataRecvd = dataRecvd.decode("utf-8")
-        print("dataRecvd = " + dataRecvd)
+        #print("dataRecvd = " + dataRecvd)
         #data = unpad(cipher.decrypt(dataRecvd))
         return dataRecvd
 
@@ -164,8 +125,8 @@ def setCipher(cCipher, key, nonce):
     backend = default_backend()
     IV = hashlib.sha256(IVMsg.encode()).hexdigest()
     SK = hashlib.sha256(SKMsg.encode()).hexdigest()
-    print("IV = " + str(IV))
-    print("SK = " + str(SK))
+    #print("IV = " + str(IV))
+    #print("SK = " + str(SK))
     global BLOCK_SIZE, CIPHER
     try:
         if cCipher == 'aes128':
@@ -176,7 +137,7 @@ def setCipher(cCipher, key, nonce):
         elif cCipher == 'aes256':
             # Encrypt using aes256
             BLOCK_SIZE = 256
-            CIPHER = Cipher(algorithms.AES(SK.encode()), modes.CBC(IV.encode()), backend=backend)
+            CIPHER = Cipher(algorithms.AES(SK[:32].encode()), modes.CBC(IV[:16].encode()), backend=backend)
         else:
             CIPHER = 0
             print("Null cipher being used, IV and SK not needed")
@@ -197,7 +158,7 @@ def serverConnect(command, filename, hostname, port, cipher, key):
    
     global NONCE
     NONCE = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(16))
-    print("nonce = " + NONCE)
+    #print("nonce = " + NONCE)
     # FIRST MESSAGE -----------------------------------------------------------------
     # Send to server for authentication. Only send CIPHER and NONCE
     setCipher(cipher, key, NONCE)
@@ -206,23 +167,25 @@ def serverConnect(command, filename, hostname, port, cipher, key):
 
     # Server should response with ack when cipher and nonce are received
     ack = recvEncrypted(serverSocket)
-    print(ack)
+    #print(ack)
 
     # Get challenge from server 
     serverChallenge = recvEncrypted(serverSocket)
-    print("Server's Challenge = " + serverChallenge)
+    #print("Server's Challenge = " + serverChallenge)
     # Authenticate key 
     toSend = authentication(serverChallenge, key)
     # Send challenge response to serverSocket
     sendEncrypted(serverSocket, toSend)
     # Get challenge result from server 
     keyResult = recvEncrypted(serverSocket)
+    if keyResult != "Server: Correct Key":
+        print(keyResult)
     # Key check
-    print(keyResult)
+    #print(keyResult)
 
     # REQUEST ------------------------------------------------------------------------
     # Start sending stuff
-    print("Sending request")
+    #print("Sending request")
     requestAction = command + ";" + filename
     sendEncrypted(serverSocket, requestAction)
 
@@ -230,19 +193,20 @@ def serverConnect(command, filename, hostname, port, cipher, key):
     serverResponse = recvEncrypted(serverSocket)
 
     # DATA EXCHANGE ------------------------------------------------------------------
-    print(serverResponse)
+    #print(serverResponse)
     if serverResponse == "Server: Valid Operation":
         # Start doing stuff with filename aka upload the file to the server
         if command == 'read':
-            print("Starting read")
+            #print("Starting read")
             read(serverSocket, filename)
         elif command == 'write':
-            print("Starting write")
+            #print("Starting write")
             write(serverSocket, filename)
 
 
     # FINAL RESULT -------------------------------------------------------------------
-    print("SUCCESS MOTHAFUCKAAAAAAAAAA WOOOOOOOO")
+    #print("SUCCESS MOTHAFUCKAAAAAAAAAA WOOOOOOOO")
+    print("OK")
 
 if __name__ == "__main__":
 
@@ -252,7 +216,7 @@ if __name__ == "__main__":
         filename = sys.argv[2]
         cipher = sys.argv[4]
         key = sys.argv[5]
-        print("Key = " + key)
+        #print("Key = " + key)
         
         # CHECK IF HOSTNAME:PORT IS CORRECT
         try:
@@ -262,7 +226,7 @@ if __name__ == "__main__":
                 PORT = prePortCheck
             else:
                 print("Invalid port number. Must be in range 0 - 65535")
-            print("DEBUG \nHOSTNAME: " + HOST + "\nPORT: " + PORT)
+            #print("DEBUG \nHOSTNAME: " + HOST + "\nPORT: " + PORT)
         except:
             print("Incorrect hosname:port syntax")
             sys.exit()

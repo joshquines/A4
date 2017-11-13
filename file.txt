@@ -1,26 +1,17 @@
-Key = mysecretkey
-DEBUG 
-HOSTNAME: localhost
-PORT: 1239
-nonce = t4zbmkspceonp1qf
-IV = 09fc347433ab8d14e3d2e4000d861ed16dd4aae0ceadef49dfd2fac75d894135
-SK = bf77d3ea719d52bc8861ec943a9cb70d35b70f8091105443e9007281ffe8603c
+IV = 496b1279cf93e61fe99fbd1c880f6caf37aa1cf5d5b35733d0b88d1799484634
+SK = c490a8f262bcb550e4c234969aed805c846d0bf5fc4f4e8dec3bb298cb8cc473
 Traceback (most recent call last):
-  File "client.py", line 179, in setCipher
-    CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
-  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/cryptography/hazmat/primitives/ciphers/modes.py", line 92, in __init__
-    raise TypeError("initialization_vector must be bytes")
-TypeError: initialization_vector must be bytes
+  File "client.py", line 140, in setCipher
+    CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV.encode()), backend=backend)
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/cryptography/hazmat/primitives/ciphers/base.py", line 108, in __init__
+    mode.validate_for_algorithm(algorithm)
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/cryptography/hazmat/primitives/ciphers/modes.py", line 81, in _check_iv_and_key_length
+    _check_aes_key_length(self, algorithm)
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/cryptography/hazmat/primitives/ciphers/modes.py", line 69, in _check_aes_key_length
+    "Only 128, 192, and 256 bit keys are allowed for this AES mode"
+ValueError: Only 128, 192, and 256 bit keys are allowed for this AES mode
 
-Server: Cipher and nonce received.
-Server's Challenge = 11poq8vho0apwy9k
-My Answer = 396e4ded9fdf73e1c282dca093ba4c62dc0a8728
-Server: Correct Key! Send me your request
-Sending request
 Server: Valid Operation
-Starting read
-trying to write to standard output
-CONTENT: a mo thasd fasd asdfas; kf4weq ae0fi asdfkasd
 a mo thasd fasd asdfas; kf4weq ae0fi asdfkasd
 File successfully read
-SUCCESS MOTHAFUCKAAAAAAAAAA WOOOOOOOO
+OK
