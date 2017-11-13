@@ -18,9 +18,12 @@ import random
 import hashlib
 
 #GLOBAL VARIABLES
-BUFFER_SIZE = 4096
+BUFFER_SIZE = 1024
 CIPHER = 0
+CIPHER_FILE = 0
 BLOCK_SIZE = 128
+IVMsg = None 
+SKMsg = None 
 
 # https://gist.github.com/crmccreary/5610068
 padder = lambda s: s + (BL0CK_SIZE - len(s) % BL0CK_SIZE) * chr(BL0CK_SIZE - len(s) % BL0CK_SIZE) 
@@ -82,10 +85,10 @@ def sendEncrypted(client, msg):
 
 def recvEncrypted(client):
     if CIPHER == 0:
-        data = client.recv(BLOCK_SIZE).decode("utf-8")
+        data = client.recv(BUFFER_SIZE).decode("utf-8")
         return data
     else:
-        data = client.recv(BLOCK_SIZE)
+        data = client.recv(BUFFER_SIZE)
         #print("data length = " + str(len(data)))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(data) + decryptor.finalize()
@@ -93,6 +96,26 @@ def recvEncrypted(client):
         dataRecvd = dataRecvd[:-dataRecvd[-1]]
         #data = unpadder.update(dataRecvd) + unpadder.finalize()
         dataRecvd = dataRecvd.decode("utf-8")
+        #print("dataRecvd = " + dataRecvd)
+        #data = unpad(cipher.decrypt(dataRecvd))
+        return dataRecvd
+
+        
+def recvEncryptedFile(client):
+    IV = hashlib.sha256(IVMsg.encode()).hexdigest()
+    SK = hashlib.sha256(SKMsg.encode()).hexdigest()
+    if CIPHER == 0:
+        data = client.recv(BUFFER_SIZE)
+        return data
+    else:
+        data = client.recv(BUFFER_SIZE)
+        #print("data length = " + str(len(data)))
+        decryptor = CIPHER.decryptor()
+        dataRecvd = decryptor.update(data) + decryptor.finalize()
+        #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
+        #dataRecvd = dataRecvd[:-dataRecvd[-1]]
+        #data = unpadder.update(dataRecvd) + unpadder.finalize()
+        dataRecvd = dataRecvd
         #print("dataRecvd = " + dataRecvd)
         #data = unpad(cipher.decrypt(dataRecvd))
         return dataRecvd
@@ -113,10 +136,12 @@ def read(client, filename):
         #logging("Trying to read " + filename)
         with open(filename, 'rb') as rfile:
             while 1:
-                content = rfile.read(BLOCK_SIZE).decode("utf-8")
-                #logging("CONTENT: " + content)
+                content = rfile.read(BLOCK_SIZE).decode("utf-8").strip()
+                print("GETTING BITS N SHIT " + str(content))
+                logging("CONTENT: " + str(content))
                 if not content:
                     #logging("not sending content")
+                    print("BREAK CONTENT LOOP")
                     sendEncrypted(client, content)
                     break
                 #logging("Sending content")
@@ -127,31 +152,42 @@ def read(client, filename):
         sendEncrypted(client, "Error: File could not be read by server")
         logging("Error: File could not be read by server")
         client.close()
+        tb = traceback.format_exc()
+        print (tb)
         return
 
 def write(client, filename):
     try:
         with open(filename, 'wb') as wfile:
             #logging("trying to write to " + filename)
-            while 1:
-                content = recvEncrypted(client)
-                #logging("CONTENT: " + str(content))
-                if not content:
-                    logging("file has ended")
-                    break
+            content = recvEncryptedFile(client)
+            while content != "":
+                
+                logging("CONTENT: " + str(content))
+                print("GETTING BITS N SHIT " + str(content))
+                #if not content:
+                #    print("BREAK CONTENT LOOP")
+                #    logging("file has ended")
+                #    break
                 #logging("Writing content")
                 wfile.write(content)
+                content = recvEncryptedFile(client)
+
             #logging("File successfully written")
+        print("AYYYY BISSHHH")
         wfile.close()
         client.close()
     except:
         sendEncrypted(client, "Error: File could not be written by server")
         logging("Error: File could not be written by server")
         client.close()
+        tb = traceback.format_exc()
+        print (tb)
         return
 
 
 def setCipher(cCipher, key, nonce):
+    global IVMsg, SKMsg, CIPHER_FILE
     IVMsg = key + nonce + "IV"
     SKMsg = key + nonce + "SK"
     backend = default_backend()
@@ -165,11 +201,13 @@ def setCipher(cCipher, key, nonce):
             # Encrypt using aes128
             BLOCK_SIZE = 128
             CIPHER = Cipher(algorithms.AES(SK[:16].encode()), modes.CBC(IV[:16].encode()), backend=backend)
+            #CIPHER_FILE = Cipher(algorithms.AES(SK[:16], modes.CBC(IV[:16], backend=backend)))
 
         elif cCipher == 'aes256':
             # Encrypt using aes256
             BLOCK_SIZE = 256
             CIPHER = Cipher(algorithms.AES(SK[:32].encode()), modes.CBC(IV[:16].encode()), backend=backend)
+            #CIPHER_FILE = Cipher(algorithms.AES(SK[:32], modes.CBC(IV[:16], backend=backend)))
         else:
             CIPHER = 0
             logging("Null cipher being used, IV and SK not needed")
