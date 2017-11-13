@@ -102,8 +102,9 @@ def authentication(msg, key):
 
 # SEND MESSAGE TO SERVER
 def sendEncrypted(serverSocket, msg):
-    """
+    
     byteMsg = msg.encode("utf-8")
+    """
     padder = padding.PKCS7(BLOCK_SIZE).padder()
     padded_data = padder.update(byteMsg) + padder.finalize()
     if CIPHER == 0:
