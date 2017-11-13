@@ -71,7 +71,6 @@ def sendEncrypted(client, msg):
         #byteMsg =byteMsg
         logging("new byteMsg = " + byteMsg.decode())
         logging("new byteMsg length  = " + str(len(byteMsg)))
-
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(byteMsg) + encryptor.finalize()

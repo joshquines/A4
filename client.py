@@ -153,7 +153,7 @@ def recvEncrypted(serverSocket):
         #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
         dataRecvd = dataRecvd[:-dataRecvd[-1]]
         #data = unpadder.update(dataRecvd) + unpadder.finalize()
-
+        dataRecvd.decode("utf-8")
         #data = unpad(cipher.decrypt(dataRecvd))
         return dataRecvd
 
