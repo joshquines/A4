@@ -32,16 +32,20 @@ def read(serverSocket, filename):
         # Open a file to write in bytes
         with open(filename, 'wb') as wfile:
             content = recvEncrypted(serverSocket)
+            print("Content = " + str(content))
             # First msg could be error msg
+            """
             try:
                 errorCheck = content.decode("utf-8")
                 if errorCheck == wErrorMsg:
-                    #print(wErrorMsg)
+                    print("ERROR")
+                    print(errorCheck)
                     rfile.close()
                     serverSocket.close()
                     sys.exit()
             except:
                 pass
+            """
             while 1:
                 if not content:
                     # EOF is indicated by an empty byte string
@@ -88,7 +92,7 @@ def write(serverSocket, filename):
 def authentication(msg, key):
     clientHash = msg + key
     response = hashlib.sha1(clientHash.encode()).hexdigest()
-    #print("My Answer = " + response)
+    print("My Answer = " + response)
     return response
     
 
@@ -130,16 +134,16 @@ def sendEncrypted(serverSocket, msg):
 
 def recvEncrypted(serverSocket):
     if CIPHER != 0:
-        #print("cipher not equal to 0")
+        print("cipher not equal to 0")
         message = serverSocket.recv(BLOCK_SIZE*2)
-        #print("received msg = " + str(message))
+        print("received msg = " + str(message))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(message) + decryptor.finalize()
 
-        #print("decrypted = " + str(dataRecvd))
+        print("decrypted = " + str(dataRecvd))
         dataRecvd = dataRecvd[:-dataRecvd[-1]]
-        #print("padding removed = " + str(dataRecvd))
-        #print("Data received = " + str(dataRecvd)+ " of type " + str(type(dataRecvd)))
+        print("padding removed = " + str(dataRecvd))
+        print("Data received = " + str(dataRecvd)+ " of type " + str(type(dataRecvd)))
         return dataRecvd
     else:
         message = serverSocket.recv(BUFFER_SIZE)
@@ -198,7 +202,7 @@ def serverConnect(command, filename, hostname, port, cipher, key):
 
     # CHALLENGE ---------------------------------------------------------------------
     serverChallenge = recvEncrypted(serverSocket).decode("utf-8")
-    #print("Server's Challenge = " + str(serverChallenge))
+    print("Server's Challenge = " + str(serverChallenge))
     # Authenticate key 
     toSend = authentication(serverChallenge, key)
     # Send challenge response to serverSocket

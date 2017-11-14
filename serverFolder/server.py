@@ -49,8 +49,9 @@ def authentication(client, key):
 
 
 def sendEncrypted(client, msg):
+    # try changing the type of msg to bytes
     try:
-        byteMsg = msg.encode("utf-8")
+        byteMsg = msg.encode()
     except:
         byteMsg = msg
 
@@ -59,22 +60,26 @@ def sendEncrypted(client, msg):
     else:
         # https://stackoverflow.com/questions/14179784/python-encrypting-with-pycrypto-aes#
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
-
+        print("byteMsg length = " + str(len(byteMsg)))
         length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
         # if byteMsg is BLOCK_SIZE length would add BLOCK_SIZE//8 padding
         if length == BLOCK_SIZE//8:
             # Instead add BLOCK_SIZE of padding
-            length = BLOCK_SIZE//8
+            length = BLOCK_SIZE
         else:
             # Add BLOCK_SIZE of padding
-            length += BLOCK_SIZE//8
-        # pad with length bytes of length
+            length += BLOCK_SIZE
+        print("pad length = " + str(length))
         pad = bytes([length])*length
-
+        print("byteMsg = " + str(byteMsg))
+        print("pad = " + str(pad))
         byteMsg = byteMsg + pad
-        # Encrypt the contents using cipher
+        print("padded msg = " + str(byteMsg))
+        print("padded msg len = " + str(len(byteMsg)))
+
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(byteMsg) + encryptor.finalize()
+        print("encrypted = " + str(toSend))
         client.sendall(toSend)
 
 
@@ -115,17 +120,14 @@ def read(client, filename):
         logging("Trying to read " + filename)
         with open(filename, 'rb') as rfile:
             while 1:
-                content = rfile.read(BUFFER_SIZE)
-                #print("GETTING BITS N SHIT " + str(content))
+                content = rfile.read(BLOCK_SIZE)
                 logging("CONTENT: " + str(content) + " of type " + str(type(content)))
                 if not content:
                     logging("not sending content")
-                    #print("BREAK CONTENT LOOP")
                     sendEncrypted(client, content)
                     break
                 logging("Sending content")
                 sendEncrypted(client, content)
-            #sendEncrypted(serverSocket, "") # something to tell the server the file has ended
         rfile.close()
     except:
         sendEncrypted(client, "Error: File could not be read by server")
