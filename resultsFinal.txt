@@ -1,0 +1,190 @@
+NULL read 1KB TEST: 1
+OK
+
+real	0m0.193s
+user	0m0.165s
+sys	0m0.021s
+NULL read 1KB TEST: 2
+OK
+
+real	0m0.190s
+user	0m0.163s
+sys	0m0.020s
+NULL read 1KB TEST: 3
+OK
+
+real	0m0.201s
+user	0m0.170s
+sys	0m0.023s
+NULL read 1KB TEST: 4
+OK
+
+real	0m0.208s
+user	0m0.175s
+sys	0m0.022s
+NULL read 1KB TEST: 5
+OK
+
+real	0m0.201s
+user	0m0.169s
+sys	0m0.023s
+NULL read 1KB TEST: 6
+OK
+
+real	0m0.195s
+user	0m0.167s
+sys	0m0.020s
+NULL read 1KB TEST: 7
+OK
+
+real	0m0.192s
+user	0m0.163s
+sys	0m0.020s
+NULL read 1KB TEST: 8
+OK
+
+real	0m0.199s
+user	0m0.169s
+sys	0m0.022s
+NULL read 1KB TEST: 9
+OK
+
+real	0m0.194s
+user	0m0.165s
+sys	0m0.022s
+NULL read 1KB TEST: 10
+OK
+
+real	0m0.205s
+user	0m0.176s
+sys	0m0.021s
+aes128 read 1KB TEST: 1
+OK
+
+real	0m0.197s
+user	0m0.167s
+sys	0m0.021s
+aes128 read 1KB TEST: 2
+OK
+
+real	0m0.199s
+user	0m0.168s
+sys	0m0.022s
+aes128 read 1KB TEST: 3
+OK
+
+real	0m0.198s
+user	0m0.167s
+sys	0m0.023s
+aes128 read 1KB TEST: 4
+OK
+
+real	0m0.195s
+user	0m0.165s
+sys	0m0.021s
+aes128 read 1KB TEST: 5
+OK
+
+real	0m0.195s
+user	0m0.164s
+sys	0m0.022s
+aes128 read 1KB TEST: 6
+OK
+
+real	0m0.201s
+user	0m0.170s
+sys	0m0.022s
+aes128 read 1KB TEST: 7
+OK
+
+real	0m0.198s
+user	0m0.169s
+sys	0m0.021s
+aes128 read 1KB TEST: 8
+OK
+
+real	0m0.203s
+user	0m0.173s
+sys	0m0.022s
+aes128 read 1KB TEST: 9
+OK
+
+real	0m0.198s
+user	0m0.170s
+sys	0m0.020s
+aes128 read 1KB TEST: 10
+OK
+
+real	0m0.202s
+user	0m0.171s
+sys	0m0.021s
+aes256 read 1KB TEST: 1
+Traceback (most recent call last):
+  File "client.py", line 279, in <module>
+    serverConnect(command, filename, HOST, PORT, cipher, key)
+  File "client.py", line 203, in serverConnect
+    ack = recvEncrypted(serverSocket).decode("utf-8")
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0x94 in position 64: invalid start byte
+
+real	0m0.300s
+user	0m0.245s
+sys	0m0.032s
+aes256 read 1KB TEST: 2
+OK
+
+real	0m0.300s
+user	0m0.250s
+sys	0m0.038s
+aes256 read 1KB TEST: 3
+OK
+
+real	0m0.503s
+user	0m0.278s
+sys	0m0.041s
+aes256 read 1KB TEST: 4
+Traceback (most recent call last):
+  File "client.py", line 279, in <module>
+    serverConnect(command, filename, HOST, PORT, cipher, key)
+  File "client.py", line 203, in serverConnect
+    ack = recvEncrypted(serverSocket).decode("utf-8")
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xbc in position 64: invalid start byte
+
+real	0m0.225s
+user	0m0.191s
+sys	0m0.026s
+aes256 read 1KB TEST: 5
+OK
+
+real	0m0.258s
+user	0m0.207s
+sys	0m0.034s
+aes256 read 1KB TEST: 6
+OK
+
+real	0m0.210s
+user	0m0.173s
+sys	0m0.024s
+aes256 read 1KB TEST: 7
+OK
+
+real	0m0.204s
+user	0m0.171s
+sys	0m0.024s
+aes256 read 1KB TEST: 8
+OK
+
+real	0m0.228s
+user	0m0.188s
+sys	0m0.024s
+aes256 read 1KB TEST: 9
+OK
+
+real	0m0.243s
+user	0m0.195s
+sys	0m0.032s
+aes256 read 1KB TEST: 10
+OK
+
+real	0m0.234s
+user	0m0.198s
+sys	0m0.025s
