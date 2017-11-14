@@ -53,36 +53,36 @@ def sendEncrypted(client, msg):
         byteMsg = msg.encode("utf-8")
     except:
         byteMsg = msg
-    logging("byteMsg = " + str(byteMsg))
-    logging("byteMsg length = " + str(len(byteMsg)))
-    logging("CIPHER = " + str(CIPHER))
+
     if CIPHER == 0:
         client.sendall(byteMsg)
     else:
-        # https://stackoverflow.com/questions/14179784/python-encrypting-with-pycrypto-aes
-        # https://cryptography.io/en/latest/hazmat/primitives/padding/?highlight=padding
-        #old padder = padding.PKCS7(BLOCK_SIZE).padder()
-        #old padded_data = padder.update(byteMsg) + padder.finalize()
-        #padded_data = pad(msg)
-        length = 16 - (len(byteMsg) % 16)
-        logging("length = " + str(length))
-        byteMsg += bytes([length])*length
-        #byteMsg =byteMsg
-        #logging("new byteMsg = " + byteMsg.decode())
-        #logging("new byteMsg length  = " + str(len(byteMsg)))
+        # https://stackoverflow.com/questions/14179784/python-encrypting-with-pycrypto-aes#
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
+
+        length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
+        # if byteMsg is BLOCK_SIZE length would add BLOCK_SIZE//8 padding
+        if length == 16:
+            # Instead add BLOCK_SIZE of padding
+            length = 128
+        else:
+            # Add BLOCK_SIZE of padding
+            length += 128
+        # pad with length bytes of length
+        pad = bytes([length])*length
+
+        byteMsg = byteMsg + pad
+        # Encrypt the contents using cipher
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(byteMsg) + encryptor.finalize()
         client.sendall(toSend)
-        #print("Encryption = " + str(toSend))
-        #print(len(toSend))
-    #print("debug")
+
 
 
 def recvEncrypted(client):
     if CIPHER != 0:
         logging("cipher not equal to 0")
-        message = client.recv(BUFFER_SIZE)
+        message = client.recv(BLOCK_SIZE*2)
         logging("received msg = " + str(message))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(message) + decryptor.finalize()
