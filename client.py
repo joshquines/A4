@@ -54,9 +54,10 @@ def read(serverSocket, filename):
                 content = recvEncrypted(serverSocket)
         wfile.close()
     except:
-        sendEncrypted(serverSocket, "Error: File could not be written by server")
-        print("Error: File could not be written by server")
+        print("Error: File could not be read by server")
         serverSocket.close()
+        tb = traceback.format_exc()
+        print (tb)
         return
 
 # To write the file content to the Server the Client must read the file and pass it through the socket encrypted
@@ -114,12 +115,14 @@ def sendEncrypted(serverSocket, msg):
         # if byteMsg is BLOCK_SIZE length would add BLOCK_SIZE//8 padding
         if length == BLOCK_SIZE//8:
             # Instead add BLOCK_SIZE of padding
-            length = BLOCK_SIZE
-        else:
+            length = 0
+        #else:
             # Add BLOCK_SIZE of padding
-            length += BLOCK_SIZE
+        #    length += BLOCK_SIZE
+        #extraLen = BLOCK_SIZE + length
         #print("pad length = " + str(length))
         pad = bytes([length])*length
+        #pad += bytes([extraLen])*BLOCK_SIZE
         #print("byteMsg = " + str(byteMsg))
         #print("pad = " + str(pad))
         byteMsg = byteMsg + pad
@@ -139,9 +142,9 @@ def recvEncrypted(serverSocket):
         #print("received msg = " + str(message))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(message) + decryptor.finalize()
-
         #print("decrypted = " + str(dataRecvd))
-        dataRecvd = dataRecvd[:-dataRecvd[-1]]
+        if  len(dataRecvd) != 0 and dataRecvd[len(dataRecvd)-1] == dataRecvd[len(dataRecvd)-2]:
+            dataRecvd = dataRecvd[:-dataRecvd[-1]]
         #print("padding removed = " + str(dataRecvd))
         #print("Data received = " + str(dataRecvd)+ " of type " + str(type(dataRecvd)))
         return dataRecvd
