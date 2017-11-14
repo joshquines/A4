@@ -32,7 +32,7 @@ def read(serverSocket, filename):
         # Open a file to write in bytes
         with open(filename, 'wb') as wfile:
             content = recvEncrypted(serverSocket)
-            print("Content = " + str(content))
+            #print("Content = " + str(content))
             # First msg could be error msg
             """
             try:
@@ -92,7 +92,7 @@ def write(serverSocket, filename):
 def authentication(msg, key):
     clientHash = msg + key
     response = hashlib.sha1(clientHash.encode()).hexdigest()
-    print("My Answer = " + response)
+    #print("My Answer = " + response)
     return response
     
 
@@ -109,7 +109,7 @@ def sendEncrypted(serverSocket, msg):
     else:
         # https://stackoverflow.com/questions/14179784/python-encrypting-with-pycrypto-aes#
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
-        print("byteMsg length = " + str(len(byteMsg)))
+        #print("byteMsg length = " + str(len(byteMsg)))
         length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
         # if byteMsg is BLOCK_SIZE length would add BLOCK_SIZE//8 padding
         if length == BLOCK_SIZE//8:
@@ -118,32 +118,32 @@ def sendEncrypted(serverSocket, msg):
         else:
             # Add BLOCK_SIZE of padding
             length += BLOCK_SIZE
-        print("pad length = " + str(length))
+        #print("pad length = " + str(length))
         pad = bytes([length])*length
-        print("byteMsg = " + str(byteMsg))
-        print("pad = " + str(pad))
+        #print("byteMsg = " + str(byteMsg))
+        #print("pad = " + str(pad))
         byteMsg = byteMsg + pad
-        print("padded msg = " + str(byteMsg))
-        print("padded msg len = " + str(len(byteMsg)))
+        #print("padded msg = " + str(byteMsg))
+        #print("padded msg len = " + str(len(byteMsg)))
 
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(byteMsg) + encryptor.finalize()
-        print("encrypted = " + str(toSend))
+        #print("encrypted = " + str(toSend))
         serverSocket.sendall(toSend)
         #print("Sent")
 
 def recvEncrypted(serverSocket):
     if CIPHER != 0:
-        print("cipher not equal to 0")
+        #print("cipher not equal to 0")
         message = serverSocket.recv(BLOCK_SIZE*2)
-        print("received msg = " + str(message))
+        #print("received msg = " + str(message))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(message) + decryptor.finalize()
 
-        print("decrypted = " + str(dataRecvd))
+        #print("decrypted = " + str(dataRecvd))
         dataRecvd = dataRecvd[:-dataRecvd[-1]]
-        print("padding removed = " + str(dataRecvd))
-        print("Data received = " + str(dataRecvd)+ " of type " + str(type(dataRecvd)))
+        #print("padding removed = " + str(dataRecvd))
+        #print("Data received = " + str(dataRecvd)+ " of type " + str(type(dataRecvd)))
         return dataRecvd
     else:
         message = serverSocket.recv(BUFFER_SIZE)
@@ -167,7 +167,7 @@ def setCipher(cCipher, key, nonce):
         elif cCipher == 'aes256':
             # Encrypt using aes256
             BLOCK_SIZE = 256
-            CIPHER = Cipher(algorithms.AES(SK), modes.CBC(IV), backend=backend)
+            CIPHER = Cipher(algorithms.AES(SK[:32].encode()), modes.CBC(IV[:16].encode()), backend=backend)
         else:
             CIPHER = 0
             #print("Null cipher being used, IV and SK not needed")
@@ -202,7 +202,7 @@ def serverConnect(command, filename, hostname, port, cipher, key):
 
     # CHALLENGE ---------------------------------------------------------------------
     serverChallenge = recvEncrypted(serverSocket).decode("utf-8")
-    print("Server's Challenge = " + str(serverChallenge))
+    #print("Server's Challenge = " + str(serverChallenge))
     # Authenticate key 
     toSend = authentication(serverChallenge, key)
     # Send challenge response to serverSocket
