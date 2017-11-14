@@ -105,22 +105,22 @@ def sendEncrypted(serverSocket, msg):
     else:
         # https://stackoverflow.com/questions/14179784/python-encrypting-with-pycrypto-aes#
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
-
+        print("byteMsg length = " + str(len(byteMsg)))
         length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
         # if byteMsg is BLOCK_SIZE length would add BLOCK_SIZE//8 padding
         if length == BLOCK_SIZE//8:
             # Instead add BLOCK_SIZE of padding
-            length = 128
+            length = BLOCK_SIZE
         else:
             # Add BLOCK_SIZE of padding
-            length += 128
+            length += BLOCK_SIZE
         print("pad length = " + str(length))
         pad = bytes([length])*length
         print("byteMsg = " + str(byteMsg))
         print("pad = " + str(pad))
         byteMsg = byteMsg + pad
-        #print("padded msg = " + str(byteMsg))
-        #print("padded msg len = " + str(len(byteMsg)))
+        print("padded msg = " + str(byteMsg))
+        print("padded msg len = " + str(len(byteMsg)))
 
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(byteMsg) + encryptor.finalize()
