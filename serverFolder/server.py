@@ -87,7 +87,7 @@ def sendEncrypted(client, msg):
 def recvEncrypted(client):
     if CIPHER != 0:
         #logging("cipher not equal to 0")
-        message = client.recv(BLOCK_SIZE*2)
+        message = client.recv(BLOCK_SIZE)
         #logging("received msg = " + str(message))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(message) + decryptor.finalize()
