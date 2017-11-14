@@ -138,7 +138,7 @@ def sendEncrypted(serverSocket, msg):
 def recvEncrypted(serverSocket):
     if CIPHER != 0:
         #print("cipher not equal to 0")
-        message = serverSocket.recv(BLOCK_SIZE)
+        message = serverSocket.recv(BLOCK_SIZE*2)
         #print("received msg = " + str(message))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(message) + decryptor.finalize()
