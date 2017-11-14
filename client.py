@@ -32,20 +32,6 @@ def read(serverSocket, filename):
         # Open a file to write in bytes
         with open(filename, 'wb') as wfile:
             content = recvEncrypted(serverSocket)
-            #print("Content = " + str(content))
-            # First msg could be error msg
-            """
-            try:
-                errorCheck = content.decode("utf-8")
-                if errorCheck == wErrorMsg:
-                    print("ERROR")
-                    print(errorCheck)
-                    rfile.close()
-                    serverSocket.close()
-                    sys.exit()
-            except:
-                pass
-            """
             while 1:
                 if not content:
                     # EOF is indicated by an empty byte string
@@ -69,19 +55,16 @@ def write(serverSocket, filename):
             while 1:
                 content = rfile.read(BLOCK_SIZE)
                 if not content:
-                    #print("not sending content")
                     sendEncrypted(serverSocket, content)
                     break
                 try:
                     errorCheck = content.decode("utf-8")
                     if errorCheck == wErrorMsg:
-                        #print(wErrorMsg)
                         rfile.close()
                         serverSocket.close()
                         sys.exit()
                 except:
                     pass
-                #print("Sending content")
                 sendEncrypted(serverSocket, content)
         rfile.close()
     except:
@@ -93,7 +76,6 @@ def write(serverSocket, filename):
 def authentication(msg, key):
     clientHash = msg + key
     response = hashlib.sha1(clientHash.encode()).hexdigest()
-    #print("My Answer = " + response)
     return response
     
 
@@ -110,43 +92,25 @@ def sendEncrypted(serverSocket, msg):
     else:
         # https://stackoverflow.com/questions/14179784/python-encrypting-with-pycrypto-aes#
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
-        #print("byteMsg length = " + str(len(byteMsg)))
         length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
         # if byteMsg is BLOCK_SIZE length would add BLOCK_SIZE//8 padding
         if length == BLOCK_SIZE//8:
             # Instead add BLOCK_SIZE of padding
             length = 0
-        #else:
-            # Add BLOCK_SIZE of padding
-        #    length += BLOCK_SIZE
-        #extraLen = BLOCK_SIZE + length
-        #print("pad length = " + str(length))
         pad = bytes([length])*length
-        #pad += bytes([extraLen])*BLOCK_SIZE
-        #print("byteMsg = " + str(byteMsg))
-        #print("pad = " + str(pad))
         byteMsg = byteMsg + pad
-        #print("padded msg = " + str(byteMsg))
-        #print("padded msg len = " + str(len(byteMsg)))
-
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(byteMsg) + encryptor.finalize()
-        #print("encrypted = " + str(toSend))
         serverSocket.sendall(toSend)
-        #print("Sent")
 
 def recvEncrypted(serverSocket):
     if CIPHER != 0:
         #print("cipher not equal to 0")
         message = serverSocket.recv(BLOCK_SIZE)
-        #print("received msg = " + str(message))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(message) + decryptor.finalize()
-        #print("decrypted = " + str(dataRecvd))
         if  len(dataRecvd) != 0 and dataRecvd[len(dataRecvd)-1] == dataRecvd[len(dataRecvd)-2]:
             dataRecvd = dataRecvd[:-dataRecvd[-1]]
-        #print("padding removed = " + str(dataRecvd))
-        #print("Data received = " + str(dataRecvd)+ " of type " + str(type(dataRecvd)))
         return dataRecvd
     else:
         message = serverSocket.recv(BUFFER_SIZE)
@@ -158,8 +122,6 @@ def setCipher(cCipher, key, nonce):
     backend = default_backend()
     IV = hashlib.sha256(IVMsg.encode()).hexdigest()
     SK = hashlib.sha256(SKMsg.encode()).hexdigest()
-    #print("IV = " + str(IV))
-    #print("SK = " + str(SK))
     global BLOCK_SIZE, CIPHER
     try:
         if cCipher == 'aes128':
@@ -173,7 +135,6 @@ def setCipher(cCipher, key, nonce):
             CIPHER = Cipher(algorithms.AES(SK[:32].encode()), modes.CBC(IV[:16].encode()), backend=backend)
         else:
             CIPHER = 0
-            #print("Null cipher being used, IV and SK not needed")
     except:
         tb = traceback.format_exc()
         print (tb)
@@ -191,7 +152,6 @@ def serverConnect(command, filename, hostname, port, cipher, key):
    
     global NONCE
     NONCE = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(16))
-    #print("nonce = " + NONCE)
 
     # FIRST MESSAGE -----------------------------------------------------------------
     # Send to server for authentication. Only send CIPHER and NONCE
@@ -229,7 +189,6 @@ def serverConnect(command, filename, hostname, port, cipher, key):
     if serverResponse == "Server: Valid Operation":
         # Start doing stuff with filename aka upload the file to the server
         if command == 'read':
-            #print("Starting read")
             read(serverSocket, filename)
         elif command == 'write':
             #print("Starting write")
