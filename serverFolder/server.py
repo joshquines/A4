@@ -62,12 +62,12 @@ def sendEncrypted(client, msg):
 
         length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
         # if byteMsg is BLOCK_SIZE length would add BLOCK_SIZE//8 padding
-        if length == 16:
+        if length == BLOCK_SIZE//8:
             # Instead add BLOCK_SIZE of padding
-            length = 128
+            length = BLOCK_SIZE//8
         else:
             # Add BLOCK_SIZE of padding
-            length += 128
+            length += BLOCK_SIZE//8
         # pad with length bytes of length
         pad = bytes([length])*length
 
@@ -90,6 +90,7 @@ def recvEncrypted(client):
         #data = unpadder.update(dataRecvd) + unpadder.finalize()
         #data = unpad(cipher.decrypt(dataRecvd))
         logging("decrypted = " + str(dataRecvd))
+
         dataRecvd = dataRecvd[:-dataRecvd[-1]]
         logging("padding removed = " + str(dataRecvd))
         logging("Data received = " + str(dataRecvd)+ " of type " + str(type(dataRecvd)))

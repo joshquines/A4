@@ -27,22 +27,28 @@ CIPHER = 0
 cipherType = ['aes256','aes128','null']
 
 def read(serverSocket, filename):
+    wErrorMsg = "Error: File could not be read by server"
     try:
+        # Open a file to write in bytes
         with open(filename, 'wb') as wfile:
-            #print("trying to write to " + filename)
             content = recvEncrypted(serverSocket)
+            # First msg could be error msg
+            try:
+                errorCheck = content.decode("utf-8")
+                if errorCheck == wErrorMsg:
+                    #print(wErrorMsg)
+                    rfile.close()
+                    serverSocket.close()
+                    sys.exit()
+            except:
+                pass
             while 1:
-                #print("CONTENT: " + str(content))
                 if not content:
-                    #print("file has ended")
+                    # EOF is indicated by an empty byte string
                     break
-                #print("Writing content in " + str(type(content)))
                 wfile.write(content)
                 content = recvEncrypted(serverSocket)
-
-            #print("File successfully written")
         wfile.close()
-        serverSocket.close()
     except:
         sendEncrypted(serverSocket, "Error: File could not be written by server")
         print("Error: File could not be written by server")
@@ -53,13 +59,10 @@ def read(serverSocket, filename):
 def write(serverSocket, filename):
     # Open the file and read the correct size and send to the server
     wErrorMsg = "Error: File could not be written by server"
-    #print("Starting write operation")
     try:
         with open(filename, 'rb') as rfile:
             while 1:
                 content = rfile.read(BLOCK_SIZE)
-                #print("CONTENT: " + str(content) + " of type " + str(type(content)))
-                #print("content length = " + str(len(content)))
                 if not content:
                     #print("not sending content")
                     sendEncrypted(serverSocket, content)
@@ -105,7 +108,7 @@ def sendEncrypted(serverSocket, msg):
 
         length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
         # if byteMsg is BLOCK_SIZE length would add BLOCK_SIZE//8 padding
-        if length == 16:
+        if length == BLOCK_SIZE//8:
             # Instead add BLOCK_SIZE of padding
             length = 128
         else:
@@ -116,8 +119,8 @@ def sendEncrypted(serverSocket, msg):
         print("byteMsg = " + str(byteMsg))
         print("pad = " + str(pad))
         byteMsg = byteMsg + pad
-        print("padded msg = " + str(byteMsg))
-        print("padded msg len = " + str(len(byteMsg)))
+        #print("padded msg = " + str(byteMsg))
+        #print("padded msg len = " + str(len(byteMsg)))
 
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(byteMsg) + encryptor.finalize()
@@ -128,7 +131,7 @@ def sendEncrypted(serverSocket, msg):
 def recvEncrypted(serverSocket):
     if CIPHER != 0:
         #print("cipher not equal to 0")
-        message = serverSocket.recv(BUFFER_SIZE)
+        message = serverSocket.recv(BLOCK_SIZE*2)
         #print("received msg = " + str(message))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(message) + decryptor.finalize()
