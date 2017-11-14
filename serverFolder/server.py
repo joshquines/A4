@@ -60,26 +60,15 @@ def sendEncrypted(client, msg):
     else:
         # https://stackoverflow.com/questions/14179784/python-encrypting-with-pycrypto-aes#
         # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/?highlight=cbc%20mode
-        #print("byteMsg length = " + str(len(byteMsg)))
         length = BLOCK_SIZE//8 - (len(byteMsg) % (BLOCK_SIZE//8))
         # if byteMsg is BLOCK_SIZE length would add BLOCK_SIZE//8 padding
         if length == BLOCK_SIZE//8:
             # Instead add BLOCK_SIZE of padding
             length = 0
-        #else:
-            # Add BLOCK_SIZE of padding
-        #    length += BLOCK_SIZE
-        #print("pad length = " + str(length))
         pad = bytes([length])*length
-        #print("byteMsg = " + str(byteMsg))
-        #print("pad = " + str(pad))
         byteMsg = byteMsg + pad
-        #print("padded msg = " + str(byteMsg))
-        #print("padded msg len = " + str(len(byteMsg)))
-
         encryptor = CIPHER.encryptor()
         toSend = encryptor.update(byteMsg) + encryptor.finalize()
-        #print("encrypted = " + str(toSend))
         client.sendall(toSend)
 
 
@@ -91,10 +80,6 @@ def recvEncrypted(client):
         #logging("received msg = " + str(message))
         decryptor = CIPHER.decryptor()
         dataRecvd = decryptor.update(message) + decryptor.finalize()
-        #unpadder = padding.PKCS7(BLOCK_SIZE).unpadder()
-        #data = unpadder.update(dataRecvd) + unpadder.finalize()
-        #data = unpad(cipher.decrypt(dataRecvd))
-        #logging("decrypted = " + str(dataRecvd))
         if  len(dataRecvd) != 0 and dataRecvd[len(dataRecvd)-1] == dataRecvd[len(dataRecvd)-2]:
             dataRecvd = dataRecvd[:-dataRecvd[-1]]
         #logging("padding removed = " + str(dataRecvd))
@@ -145,20 +130,14 @@ def write(client, filename):
             content = recvEncrypted(client)
             while 1:
                 #logging("CONTENT: " + str(content))
-                #print("GETTING BITS N SHIT " + str(content))
                 if not content:
                     #print("BREAK CONTENT LOOP")
                     #logging("file has ended")
                     break
-                #logging("Writing content in " + str(type(content)))
-                #if ".txt" not in filename:
-                #    wfile.write(content)
-                #else:
                 wfile.write(content)
                 content = recvEncrypted(client)
 
             logging("File successfully written")
-        #print("AYYYY BISSHHH")
         wfile.close()
         #client.close()
     except:
